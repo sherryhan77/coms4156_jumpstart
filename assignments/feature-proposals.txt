@@ -1,0 +1,66 @@
+  _______         _____       _
+ |__   __|/\     |  __ \     | |
+    | |  /  \    | |__) |___ | | ___
+    | | / /\ \   |  _  // _ \| |/ _ \
+    | |/ ____ \  | | \ \ (_) | |  __/
+    |_/_/    \_\ |_|  \_\___/|_|\___|
+  ____________________________________
+ /___________________________________/
+
+
+In addition to the current roles (teacher and student), we will add the role of
+"TA". TAs will have permissions to:
+
+  1. Sign into a course during its open attendance period (shared with students)
+  2. Open/close a course's attendance period (shared with teachers)
+  3. Collect attendance records (shared with teachers)
+
+So the TA will be a hybrid role between teachers and students.
+
+Teachers will be granted a new permission as well:
+
+  1. Add TAs to courses
+
+  _    _                  _____ _             _
+ | |  | |                / ____| |           (_)
+ | |  | |___  ___ _ __  | (___ | |_ ___  _ __ _  ___  ___
+ | |  | / __|/ _ \ '__|  \___ \| __/ _ \| '__| |/ _ \/ __|
+ | |__| \__ \  __/ |     ____) | || (_) | |  | |  __/\__ \
+  \____/|___/\___|_|    |_____/ \__\___/|_|  |_|\___||___/
+  ________________________________________________________
+ /_______________________________________________________/
+
+The current user stories are these:
+
+  Teacher User Story:
+    An instructor uses the app to collect attendance records for their courses
+    Use cases:
+      - Teacher wants to add a course
+      - Teacher wants to remove a course
+      - Teacher wants to add students to a course
+      - Teacher wants to remove students from a course
+      - Teacher wants to open an attendance window to begin collecting sign ins
+      - Teacher wants to close an attendance window
+      - Teacher wants to see attendance records per student, per course
+
+  Student User Story:
+    A student uses the app to submit their attendance for courses
+    Use cases:
+      - Student wants to sign in during a course's attendance windows
+
+By adding the TA role, we're proposing adding the following amendments
+
+  - Add a TA User Story
+    TA User Story:
+      A TA is enabled to moderate course and collect attendance, as well as
+      report their own attendance. However, they cannot modify courses
+      in any way
+      Use cases:
+        - TA wants to open an attendance window to begin collecting sign ins
+        - TA wants to close an attendance window
+        - TA wants to see attendance records per student/TA, per course
+        - TA wants to sign in during a course's attendance window
+  - Mutate the Teacher User Story
+    Add the following use cases:
+      - Teacher wants to add a TA to a course
+      - Teacher wants to remove a TA from a course
