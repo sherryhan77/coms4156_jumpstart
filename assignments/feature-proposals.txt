@@ -13,13 +13,26 @@ In addition to the current roles (teacher and student), we will add the role of
 
   1. Sign into a course during its open attendance period (shared with students)
   2. Open/close a course's attendance period (shared with teachers)
-  3. Collect attendance records (shared with teachers)
+  3. Collect/view attendance records (shared with teachers)
 
 So the TA will be a hybrid role between teachers and students.
 
-Teachers will be granted a new permission as well:
+Teachers will be granted a new related permission as well:
 
   1. Add TAs to courses
+
+
+    ______    ___ __     ___   __  __                 __
+   / ____/___/ (_) /_   /   | / /_/ /____  ____  ____/ /___ _____  ________
+  / __/ / __  / / __/  / /| |/ __/ __/ _ \/ __ \/ __  / __ `/ __ \/ ___/ _ \
+ / /___/ /_/ / / /_   / ___ / /_/ /_/  __/ / / / /_/ / /_/ / / / / /__/  __/
+/_____/\__,_/_/\__/  /_/  |_\__/\__/\___/_/ /_/\__,_/\__,_/_/ /_/\___/\___/
+
+We will also add the ability for Teacher's to modify attendence records after
+they have been initially recorded.
+
+Teachers will be granted a new permission:
+  1. Toggle a student's attendence record for a particular attendance window.
 
   _    _                  _____ _             _
  | |  | |                / ____| |           (_)
@@ -64,3 +77,10 @@ By adding the TA role, we're proposing adding the following amendments
     Add the following use cases:
       - Teacher wants to add a TA to a course
       - Teacher wants to remove a TA from a course
+
+By adding attendence editing, we're proposing the following additional user
+stories:
+  - A teacher wants to review a student's attendence record per window for a
+      course
+  - A teacher wants to change a student's attendence record for a particular
+      window for a particular course
