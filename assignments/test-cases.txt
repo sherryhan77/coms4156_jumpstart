@@ -1,0 +1,57 @@
+ _______        _      _____
+|__   __|      | |    / ____|
+   | | ___  ___| |_  | |     __ _ ___  ___  ___
+   | |/ _ \/ __| __| | |    / _` / __|/ _ \/ __|
+   | |  __/\__ \ |_  | |___| (_| \__ \  __/\__ \
+   |_|\___||___/\__|  \_____\__,_|___/\___||___/
+  ______________________________________________
+ /_____________________________________________/
+
+
+
+ ____  _            _    _
+|  _ \| |          | |  | |
+| |_) | | __ _  ___| | _| |__   _____  __
+|  _ <| |/ _` |/ __| |/ / '_ \ / _ \ \/ /
+| |_) | | (_| | (__|   <| |_) | (_) >  <
+|____/|_|\__,_|\___|_|\_\_.__/ \___/_/\_\
+
+- New user registration
+    - Teacher
+    - TA
+    - Student
+- User login
+    - Teacher
+    - TA
+    - Student
+- Role switch - between all pairs
+- Collect attendance
+    - Open window as TA/Teacher
+    - Login to same window as TA/Student
+    - Close window as TA/Teacher
+    - Confirm records match
+- Teacher Edit records - confirm changes persistancy & consistency
+- Teacher add to roster
+    - Add Student
+    - Add TA
+- Teacher delete from roster
+    - Delete Student
+    - Delete TA
+
+
+
+  _____                _
+ / ____|              | |
+| |  __ _ __ ___ _   _| |__   _____  __
+| | |_ | '__/ _ \ | | | '_ \ / _ \ \/ /
+| |__| | | |  __/ |_| | |_) | (_) >  <
+ \_____|_|  \___|\__, |_.__/ \___/_/\_\
+                  __/ |
+                 |___/
+
+- For Attendance Edit
+    - Confirm query to retrieve student specific records matches student requested from UI
+    - Confirm returned records are all displayed correctly
+    - Confirm toggle button makes correct updates
+    - Check for possible race conditions - rapid button clicking
+    - Check for consistency when editing records while an attendance window is open
