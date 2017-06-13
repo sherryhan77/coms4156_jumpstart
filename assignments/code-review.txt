@@ -1,0 +1,29 @@
+   _____          _        _____            _
+  / ____|        | |      |  __ \          (_)
+ | |     ___   __| | ___  | |__) |_____   ___  _____      __
+ | |    / _ \ / _` |/ _ \ |  _  // _ \ \ / / |/ _ \ \ /\ / /
+ | |___| (_) | (_| |  __/ | | \ \  __/\ V /| |  __/\ V  V /
+  \_____\___/ \__,_|\___| |_|  \_\___| \_/ |_|\___| \_/\_/
+
+
+A code review by The Figgis Agency
+
+File: imhere/imhere.py
+----------------------
+
+- Doing string checks in the before_request hooks is brittle. What if the urls change?
+- Doing method string checks in the endpoints is kind of weird.
+  - Can't we separate the different methods out in the decorator so the body doesn't have to check the method?
+- Not really a fan of storing routing data (for example, what class we should be looking at) in session variables
+
+File: models/index_model.py
+---------------------------
+
+- `return True if <condition> else False` could just be `return <condition>` (occurs in many files)
+
+General notes
+-------------
+
+- Database schema is terrible
+  - `teaches` doesn't mean anything, nor does `enrolled_in`
+  - `cid`, `seid`, `sid` etc. are unreadable and ambiguous
