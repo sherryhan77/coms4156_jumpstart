@@ -122,6 +122,8 @@
 
 - Boundary case for attendance window
   - Confirm no issue signing in at first/last second of open window.
+- Deleting course removes all related records
+  - Confirm server requests DB to update all tables with data linked to deleted course.
 - For Attendance Edit
   - Confirm query to retrieve student specific records matches student requested from UI.
 
