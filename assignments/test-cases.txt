@@ -106,6 +106,10 @@
     - Equivalence class: A TA who has TA'd the course before but has already
       been removed will have equivalent behavior to a TA who has never TA'd
       the course before.
+  - Re-add a Student or TA who has been removed from the course and make
+    sure the old attendance record has been recovered (all attendances
+    should still show up)
+    - Equivalence class: Students and TAs should have the same behavior
 
   _____                _
  / ____|              | |
