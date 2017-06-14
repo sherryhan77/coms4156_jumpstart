@@ -17,28 +17,95 @@
 |____/|_|\__,_|\___|_|\_\_.__/ \___/_/\_\
 
 - New user registration
-    - Teacher
-    - Student
+  - Make new users of type Teacher and Student. Also make sure
+    you can register as a Teacher if you're already a Student, Student
+    if you're already a Teacher, etc. Make sure you can log in to
+    the new users.
+    - Try using an empty UNI when registering as a Student (should fail)
+    - Try using a very long UNI when registering as a Student (should
+      succeed)
 - User login
-    - exclusive Teacher
-    - exclusive Student
-    - both roles
+  - Log in as a user who is exclusively a Teacher, a user who is
+    exclusively a Student, and a user who has a mixture of roles. Make
+    sure you can see your relevant courses.
 - Role switch - between all pairs
+  - Switch role in the UI. Make sure the UI reflects the new role. Make
+    sure the user does not have an option to change to a mode they don't
+    have as a role.
+    - from Teacher to Student
+    - from Student to Teacher
+    - from TA to Teacher
+    - from Teacher to TA
+    - from TA to Student
+    - from Student to TA
+- Adding courses
+  - Add a few courses as a Teacher. Make sure the course shows up in the
+    course list. Try with various names including already taken names,
+    empty string (should fail), and very long names.
+    - With initial UNIs
+      - With non-existant UNIs. This should fail.
+    - Without initial unis
+- Removing courses
+  - Remove some courses as a Teacher. Make sure the courses no longer
+    show up in the course list for the Teacher or for TAs or Students
+    who were in the old course.
 - Collect attendance
-    - Open window as TA/Teacher
-    - Login to same window as TA/Student
-    - Close window as TA/Teacher
-    - Confirm records match
-- Teacher Edit records - confirm changes persistancy & consistency
+  - Try to open an attendance window as a TA and as a Teacher on a
+    course that has a closed attendance window. Make sure the window
+    remains open when you refresh or switch to another user who
+    participates in the course.
+  - Try to open an attendance window twice by double-clicking the
+    button. It should be open at the end.
+  - Log in to an open window as a TA and as a Student. Make sure
+    the attendance record gets reflected on course page and attendance
+    details page for the user and course.
+  - Close window as TA/Teacher
+  - Try to close an attendance window twice by double-clicking the
+    button. It should be closed at the end.
+  - Close window as a TA and as a Teacher. Try as a TA closing
+    a window opened by the Teacher and as a Teacher closing a window
+    opened by a TA. In all cases, make sure the window remains closed
+    when refreshing and when switching to another user who participates
+    in the course.
+- Editing records
+  - Toggle records and make sure they persist over a refresh and update
+    the aggregated attendance record for the user on the course. Test
+    for both an attendance window that's open and a window that's closed.
+    - Equivalence classes: The behavior should be identical when the
+      target is a TA as when the target is a Student
+  - Open a window on a course. Open the attendance record for a student
+    as a Teacher. In another window, log in as the student and sign in
+    to the window. In the first window (as a Teacher), click "toggle"
+    for the current window. Make sure that the Student is still signed
+    in (indicated both for the student and the Teacher)
 - Teacher add to roster
-    - Add Student
-    - Add TA
-    -
+  - Add a Student to a course. Make sure the Student can see the course
+    when signed in as the Student. Make sure the Student is shown in the
+    class roster.
+  - Add a Student to a course again. Make sure the Student is not in any
+    way duplicated on the roster.
+  - Add a non-existant Student UNI to the course. This should fail.
+  - Add a TA to a course. Make sure the TA can see the course when signed
+    in as the TA. Make sure the TA is shown in the TA roster.
+  - Add a TA to a course again. Make sure the TA is not in any way
+    duplicated on the TA roster.
+  - Add a non-existant TA UNI to the course. This should fail.
 - Teacher delete from roster
-    - Delete Student
-    - Delete TA
-
-
+  - Delete a Student from a course. Make sure the Student is no longer
+    shown on the course roster and that the Student can no longer see the
+    course in their course list.
+  - Delete a Student from a course they're not in. This should fail.
+    - Equivalence class: A Student who has been in the course before but
+      has already been removed will have equivalent behavior to a Student
+      who has never been in the course before.
+  - Delete a TA from a course they TA. Make sure the TA is no longer shown
+    on the TA roster and that the TA can no longer see the course in their
+    course list. Make sure TA mode is no longer an option if the TA no
+    longer TAs any courses.
+  - Delete a TA from a course they don't TA. This should fail.
+    - Equivalence class: A TA who has TA'd the course before but has already
+      been removed will have equivalent behavior to a TA who has never TA'd
+      the course before.
 
   _____                _
  / ____|              | |
