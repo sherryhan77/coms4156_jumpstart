@@ -18,12 +18,11 @@
 
 - New user registration
     - Teacher
-    - TA
     - Student
 - User login
-    - Teacher
-    - TA
-    - Student
+    - exclusive Teacher
+    - exclusive Student
+    - both roles
 - Role switch - between all pairs
 - Collect attendance
     - Open window as TA/Teacher
@@ -34,6 +33,7 @@
 - Teacher add to roster
     - Add Student
     - Add TA
+    -
 - Teacher delete from roster
     - Delete Student
     - Delete TA
@@ -49,9 +49,23 @@
                   __/ |
                  |___/
 
+- Boundary case for attendance window
+    - Confirm no issue signing in at first/last second of open window.
 - For Attendance Edit
-    - Confirm query to retrieve student specific records matches student requested from UI
-    - Confirm returned records are all displayed correctly
-    - Confirm toggle button makes correct updates
+    - Confirm query to retrieve student specific records matches student requested from UI.
+
+    - Confirm returned records are all displayed correctly.
+        • Check records returned from DB query against those displayed by browser.
+    - Confirm toggle button makes correct updates.
+        1. Check requests to DB when button should mark present.
+        2. Check requests to DB when button should mark absent.
     - Check for possible race conditions - rapid button clicking
+        • Is it possible for two requests to mark present(absent) be sent consecutively?
+        • System should gracefully handle duplicate message(s)
+        • Confirm attendance data not corrupted: no duplicate records.
+            - Check attendance count not negative or greater than session count.
     - Check for consistency when editing records while an attendance window is open
+        • System should gracefully handle duplicate message(s)
+        • Confirm attendance data not corrupted: no duplicate records.
+            - Check attendance count not negative or greater than session count.
+
