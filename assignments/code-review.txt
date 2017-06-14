@@ -21,6 +21,16 @@ File: models/index_model.py
 
 - `return True if <condition> else False` could just be `return <condition>` (occurs in many files)
 
+File: models/courses_model.py
+-----------------------------
+
+- add_student:36, 57-59, remove_student:66, 93-95 both have brittle state testing, treating multiple results and zero results identically.
+    • While multiple records with the same uni "should" never occur, not adding a elseif to distinguish leaves these methods vulnerable to future change.
+- get_active_session:107-110 show an accumulation into list results, but return value logic treats multiple results identically as zero results.
+    • Likely should update return value logic, or loop logic to break on first result
+- get_secret_code:177-180 show an accumulation into list results, but return value logic treats multiple results identically as zero results.
+    • Same as get_active_session.
+
 General notes
 -------------
 
