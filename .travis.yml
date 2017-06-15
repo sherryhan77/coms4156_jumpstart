@@ -24,7 +24,7 @@ deploy:
     # Skip cleanup so api_key.py and vendored dependencies are still there
     skip_cleanup: true
     keyfile: cred.json
-    project: imhere-ase-summer-2017 #### This is your project name
+    project: coms4156-168718
     default: true
     on:
         all_branches: true
