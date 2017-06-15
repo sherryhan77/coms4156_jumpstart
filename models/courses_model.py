@@ -97,6 +97,7 @@ class Courses(Model):
     def get_active_session(self):
         '''Return the seid of an active session if it exists,
         otherwise return -1.
+        Note: Undefined which seid is returned when more than one session is active.
         '''
         query = self.ds.query(kind='sessions')
         query.add_filter('cid', '=', int(self.cid))
@@ -106,7 +107,7 @@ class Courses(Model):
             if session['expires'].replace(tzinfo=None) > datetime.now():
                 results.append(session)
 
-        return results[0]['seid'] if len(results) == 1 else -1
+        return results[0]['seid'] if len(results) >= 1 else -1
 
     def close_session(self, seid):
         if seid == -1:
