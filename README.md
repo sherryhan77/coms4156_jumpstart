@@ -1,3 +1,4 @@
+![Travis status](https://travis-ci.org/TheFiggisAgency/placeholder_here.svg?branch=master)
 
 # coms4156_jumpstart
 Jumpstart Project for Columbia University's COMS 4156 by Jonathan Shor and ____ of The Figgis Agency.
