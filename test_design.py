@@ -34,11 +34,11 @@ def create_common_context():
     ta_id = users_model.User(ta_user_data).get_or_create()['id']
 
     # register student and TA as students
-    students_model.Students(student_id).register_as_student(uni='student1')
-    students_model.Students(ta_id).register_as_student(uni='student2')
+    students_model.Student(student_id).register_as_student(uni='student1')
+    students_model.Student(ta_id).register_as_student(uni='student2')
 
     # register teacher as teacher
-    teacher = teachers_model.Teachers(teacher_id).register_as_teacher()
+    teacher = teachers_model.Teacher(teacher_id).register_as_teacher()
 
     # create course
     course = teacher.add_course('Course 1')
@@ -51,10 +51,9 @@ def create_common_context():
     }
 
 def destroy_context(context):
-    users = users_model.Users()
-    users.get_or_create_user(context['student_id']).destroy()
-    users.get_or_create_user(context['teacher_id']).destroy()
-    users.get_or_create_user(context['ta_id']).destroy()
+    users_model.User(context['student_id']).destroy()
+    users_model.User(context['teacher_id']).destroy()
+    users_model.User(context['ta_id']).destroy()
 
     courses_model.Course(context['course_id']).destroy()
 
