@@ -163,9 +163,9 @@ Unit Design testing
 5.  Open session window as TA.
 6.  Close session window as TA.
 7.  Confirm student can sign in to TA created session window.
-8.  Confirm TA can sign in to TA created session window.
-9.  Confirm TA can sign in to Teacher created session window.
-10. Confirm TA can view TA'd courses - tas_model.get_courses
-11. Confirm TA can view TA'd courses with an open window -- tas_model.get_courses_with_session
-12.
+8.  Confirm TA can sign in to session window -- using inherited .insert_attendance_record() method works.
+8a. Confirm TA can sign in to session window -- using TA class view and entering correct secret code works.
+8b. Confirm TA can sign in to session window -- using TA class view and entering incorrect secret code fails.
+9.  Confirm TA can view TA'd courses - tas_model.get_courses
+10. Confirm TA can view TA'd courses with an open window -- tas_model.get_courses_with_session
 
