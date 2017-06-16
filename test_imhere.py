@@ -211,7 +211,6 @@ def test_teacher_add_class(filled_db):
 
 def test_teacher_remove_class(db):
     with imhere.app.test_client() as c:
-
         # first check page is auth protected
 
         res = c.get('/teacher/remove_class')
@@ -226,15 +225,26 @@ def test_teacher_remove_class(db):
         with c.session_transaction() as sess:
             sess['is_teacher'] = True
 
+        payload = {'unis': '', 'classname': 'Newts big blunder'}
+        c.post('/teacher/add_class', data=payload, follow_redirects=True)
+
+        m = model.Model()
+        ds = m.get_client()
+
+        query = ds.query(kind='courses')
+        query.add_filter('name', '=', 'Newts big blunder')
+
+        course = list(query.fetch())[0]
+
         res = c.get('/teacher/remove_class')
         assert 'Class List' in res.data
         assert 'Remove Class' in res.data
         assert 'Newts big blunder' in res.data
         assert 200 == res.status_code
 
-        payload = {'cid': 5}
+        payload = {'cid': course['cid']}
         res = c.post('/teacher/remove_class', data=payload, follow_redirects=True)
-        assert 'Add Class' in res.data
+        assert 'Add a Class' in res.data
         assert 'Newts big blunder' not in res.data
         assert 200 == res.status_code
 
