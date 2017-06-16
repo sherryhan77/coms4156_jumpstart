@@ -149,8 +149,12 @@ Unit Design testing
 1.  Promote student to TA. -- call courses_model.add_TA(uni) with valid student uni
 1a. Promote student to TA that is not already enrolled. Should then be both enrolled and TA.
 2.  Demote student from TA.
-2a. Demote student from TA that is not actually TA in class: should fail gracefully.
+2a. Confirm course does not appear in TAs views: main, classes.
+2b. Confirm TA does not appear in Teacher's view for course.
+2c. Demote student from TA that is not actually TA in class: should fail gracefully.
 3.  Remove student from class, confirm no longer TA for class.
+3a. Re-add student to class, confirm no previous attendance records.
+3b. Re-add as TA to class, confirm no previous attendance records.
 4.  Check `tas` table functionality:
 4a. Displays list of TAs for each class. - courses_model.get_TAs
 4b. Updates correctly after each test 1., 2., 3. above.
