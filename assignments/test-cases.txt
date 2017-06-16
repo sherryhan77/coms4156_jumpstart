@@ -17,8 +17,9 @@
 |____/|_|\__,_|\___|_|\_\_.__/ \___/_/\_\
 
 - New user registration
-  - Make new users of type Teacher and Student. Also make sure
-    you can register as a Teacher if you're already a Student, Student
+  - Make new users of type Teacher.
+  - Make new users of type Student.
+  - Also make sure you can register as a Teacher if you're already a Student, Student
     if you're already a Teacher, etc. Make sure you can log in to
     the new users.
     - Try using an empty UNI when registering as a Student (should fail)
@@ -141,3 +142,24 @@
     • System should gracefully handle duplicate message(s)
     • Confirm attendance data not corrupted: no duplicate records.
       - Check attendance count not negative or greater than session count.
+
+
+Unit Design testing
+
+1.  Promote student to TA. -- call courses_model.add_TA(uni) with valid student uni
+1a. Promote student to TA that is not already enrolled. Should then be both enrolled and TA.
+2.  Demote student from TA.
+2a. Demote student from TA that is not actually TA in class: should fail gracefully.
+3.  Remove student from class, confirm no longer TA for class.
+4.  Check `tas` table functionality:
+4a. Displays list of TAs for each class. - courses_model.get_TAs
+4b. Updates correctly after each test 1., 2., 3. above.
+5.  Open session window as TA.
+6.  Close session window as TA.
+7.  Confirm student can sign in to TA created session window.
+8.  Confirm TA can sign in to TA created session window.
+9.  Confirm TA can sign in to Teacher created session window.
+10. Confirm TA can view TA'd courses - tas_model.get_courses
+11. Confirm TA can view TA'd courses with an open window -- tas_model.get_courses_with_session
+12.
+
