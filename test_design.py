@@ -29,9 +29,9 @@ ta_user_data = {
 
 def create_common_context():
     # create users
-    teacher_id = users_model.User(teacher_user_data).get_or_create()['id']
-    student_id = users_model.User(student_user_data).get_or_create()['id']
-    ta_id = users_model.User(ta_user_data).get_or_create()['id']
+    teacher_id = users_model.User(data=teacher_user_data).get_or_create()['id']
+    student_id = users_model.User(data=student_user_data).get_or_create()['id']
+    ta_id = users_model.User(data=ta_user_data).get_or_create()['id']
 
     # register student and TA as students
     students_model.Student(student_id).register_as_student(uni='student1')
