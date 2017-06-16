@@ -29,13 +29,13 @@ ta_user_data = {
 
 def create_common_context():
     # create users
-    teacher_id = users_model.User(data=teacher_user_data).get_or_create()['id']
-    student_id = users_model.User(data=student_user_data).get_or_create()['id']
-    ta_id = users_model.User(data=ta_user_data).get_or_create()['id']
+    teacher_id = users_model.User(**teacher_user_data).get_or_create().get_id()
+    student_id = users_model.User(**teacher_user_data).get_or_create().get_id()
+    ta_id = users_model.User(**teacher_user_data).get_or_create().get_id()
 
     # register student and TA as students
-    students_model.Student(student_id).register_as_student(uni='student1')
-    students_model.Student(ta_id).register_as_student(uni='student2')
+    students_model.Student(id=student_id).register_as_student(uni='student1')
+    students_model.Student(id=ta_id).register_as_student(uni='student2')
 
     # register teacher as teacher
     teacher = teachers_model.Teacher(teacher_id).register_as_teacher()
@@ -57,78 +57,105 @@ def destroy_context(context):
 
     courses_model.Course(context['course_id']).destroy()
 
-
 def add_attendance_records(course, students, num_attendance_recs=1):
     for i in range(num_attendance_recs):
-        course.open_session()
+        secret = course.open_session()
         for student in students:
-            _, seid = student.get_secret_and_seid()
-            student.insert_attendance_record(seid)
-        course.close_session(seid)
-    found_attendance_recs = student.get_num_attendance_records(course.cid)
-    assert found_attendance_recs == num_attendance_recs, (
-        "Found {0} attendance records, expected {}.".format(found_attendance_recs, num_attendance_recs))
+            student.sign_in(course, secret)
+        course.close_session()
+    attendance_records = course.get_attendance_records()
 
+    assert len(attendance_records) == num_attendance_recs, (
+        "Found {0} attendance records, expected {}.".format(
+            len(attendance_records), num_attendance_recs
+        )
+    )
 
 def remove_from_course(student, course):
-    course.remove_student(student.get_uni())     # Test 3.
-    found_attendance_recs = student.get_num_attendance_records(course.cid)
-    assert found_attendance_recs == 0, (
-        "Found {0} attendance records after {1} removed from course.".format(found_attendance_recs,
-            student.get_uni()))
+    course.remove_student(student)     # Test 3.
+    attendance_records = course.get_attendance_records(student=student)
+    assert len(attendance_records) == 0, (
+        "Found {0} attendance records after {1} removed from course.".format(
+            len(attendance_records),
+            student.get('uni'))
+    )
 
-
-def test_TA_promote_demote():
+def test_enrolling_and_hiring():
     context = create_common_context()
-    course = context['course_id']
-    ta = context['ta_id']
+    try:
+        course = context['course']
+        ta = context['ta']
+        student = context['student']
 
-    course.add_student(ta.get_uni())
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 1a."
-    course.add_TA(ta.get_uni())     # Test 1.
-    assert ta in course.get_TAs(), "TA not reported as TA for course, fails test 1., 4a."
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 1a."
+        course.add_student(student)
+        assert course.has_student(student), "Student not reported as enrolled in course after enrollment"
+        assert not course.has_TA(student), 'Student reported as TA for course after enrollment'
 
-    course.remove_TA(ta.get_uni())  # Test 2.
-    assert ta not in course.get_TAs(), "TA still reported as TA for course, fails test 2., 4b-2."
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 2d."
+        course.add_TA(student)
+        assert course.has_student(student), "Student not reported as enrolled in course after hiring"
+        assert course.has_TA(student), 'Student not reported as TA for course after hiring'
 
-    course.remove_TA(ta.get_uni())  # Test 2c.
-    assert ta not in course.get_TAs(), "TA still reported as TA for course, fails test 2c., 4b-2."
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 2d."
+        course.add_TA(ta)
+        assert not course.has_student(student), "TA reported as enrolled in course after hiring"
+        assert course.has_TA(student), 'TA not reported as TA for course after hiring'
 
-    destroy_context(context)
+        course.add_student(ta)
+        assert course.has_student(student), "TA not reported as enrolled in course after enrollment"
+        assert course.has_TA(student), 'TA not reported as TA for course after enrollment'
+    finally:
+        destroy_context(context)
 
+def test_dropping_and_firing():
     context = create_common_context()
-    course = context['course_id']
-    ta = context['ta_id']
+    try:
+        course = context['course']
+        ta = context['ta']
+        student = context['student']
 
-    assert ta not in course.get_students(), "TA reported as enrolled in course after destroy->create context."
-    course.add_TA(ta.get_uni())     # Test 1b.
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 1a."
-    assert ta in course.get_TAs(), "TA not reported as TA for course, fails test 1b., 4a."
+        course.add_student(student)
+        course.add_TA(ta)
+        add_attendance_records(course, [student, ta], 2)
+        course.remove_student(student)
+        course.remove_TA(ta)
 
-    remove_from_course(ta, course)     # Test 3.
-    assert ta not in course.get_students(), "TA reported as enrolled in course after remove_student."
-    assert ta not in course.get_TAs(), "TA reported as TA for course after remove_student, fails test 3, 4b-3."
+        assert len(course.get_attendance_records(student=student)) == 0, 'Student\'s records not destroyed after dropping class'
 
-    destroy_context(context)
+        assert len(course.get_attendance_records(ta=ta)) == 0, 'TA\'s records not destroyed after dropping class'
 
+        # reuse TA as student-TA
+        student_ta = ta
+        course.add_student(student_ta)
+        course.add_TA(student_ta)
+        add_attendance_records(course, [student_ta], 2)
+        course.remove_student(student_ta)
 
+        assert len(course.get_attendance_records(student=student)) == 2, 'Student-TA\'s records destroyed after dropping class'
+
+        course.add_student(student_ta)
+        course.remove_TA(student_ta)
+
+        assert len(course.get_attendance_records(student=student)) == 2, 'Student-TA\'s records destroyed after dropping class'
+
+    finally:
+        destroy_context(context)
+'''
 def test_TA_session_window():
     num_attendance_recs = 3
     context = create_common_context()
 
-    course = context['course_id']
-    ta = context['ta_id']
-    course.add_TA(ta.get_uni())     # Test 1.
+    course = context['course']
+    ta = context['ta']
+    course.add_TA(ta)     # Test 1.
 
-    assert course.get_active_session() == -1
+    assert course.get_active_session() is None
+    assert course.close_sessions()
+    assert course.get_active_session() is None
     add_attendance_records(course, [ta], num_attendance_recs=num_attendance_recs)
 
-    course.remove_TA(ta.get_uni())  # Test 2.
-    found_attendance_recs = ta.get_num_attendance_records(course.cid)
-    assert found_attendance_recs == num_attendance_recs, (
+    course.remove_TA(ta)  # Test 2.
+
+    ta_attendance = course.get_attendance_records(student=ta)
+    assert  == num_attendance_recs, (
     "After TA demotion, found {0} attendance records, expected {}.".format(found_attendance_recs, num_attendance_recs))
 
     course.remove_TA(ta.get_uni())  # Test 2c.
@@ -162,3 +189,21 @@ def test_TA_session_window():
                 stu.get_uni()))
 
     destroy_context(context)
+
+def test_student_registration():
+    students_model.Student(uni='one').destroy()
+    students_model.Student(uni='two').destroy()
+    student = students_model.Student(**student_user_data).get_or_create().register_as_student(uni='one')
+
+    ta = students_model.Student(**ta_user_data).get_or_create()
+    with pytest.raises(students_model.DuplicateUNIException):
+        ta.register_as_student(uni='one')
+
+    with pytest.raises(ValueError, message='Students must have UNIs'):
+        ta.register_as_student(uni='')
+
+    with pytest.raises(ValueError, message='Students must have UNIs'):
+        ta.register_as_student()
+
+    ta.register_as_student(uni='two')
+'''

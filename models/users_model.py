@@ -1,10 +1,87 @@
 from model import Model
 from google.cloud import datastore
 
+class User(Model):
+    def __init__(self, **kwargs):
+        self.datastore = self.get_client()
+
+        self.fetched = False
+
+        # try to fetch by id
+        if 'id' in kwargs:
+            key = self.datastore.key('user', kwargs['id'])
+            self.model = self.datastore.get(key)
+            self.fetched = bool(self.model)
+
+        # try to fetch by uni
+        if not self.fetched and 'uni' in kwargs:
+            model_query = self.datastore.query(kind='user')
+            model_query.add_filter('uni', '=', kwargs['uni'])
+            users = list(model_query.fetch())
+            if len(users) > 0:
+                self.model = users[0]
+                self.fetched = True
+
+        # try to fetch by email
+        if not self.fetched and 'email' in kwargs:
+            model_query = self.datastore.query(kind='user')
+            model_query.add_filter('email', '=', kwargs['email'])
+            users = list(model_query.fetch())
+            if len(users) == 0:
+                self.fetched = False
+                self.model = kwargs
+            else:
+                self.fetched = True
+                self.model = users[0]
+
+        # no other unique fields
+        if not self.fetched:
+            self.fetched = False
+            self.model = kwargs
+
+    def get_or_create(self):
+        if not self.fetched:
+            key = self.datastore.key('user')
+            entity = datastore.Entity(key=key)
+            entity.update(self.model)
+            self.datastore.put(entity)
+            model_query = self.datastore.query(kind='user')
+            model_query.add_filter('email', '=', self.model['email'])
+            users = list(model_query.fetch())
+            self.model = users[0]
+            self.fetched = True
+
+        return self
+
+    def get(self, key):
+        return self.model[key]
+
+    def get_id(self):
+        return self.get_key().id
+
+    def get_key(self):
+        try:
+            return self.model.key
+        except AttributeError:
+            raise 'Tried to get key of unsaved user'
+
+    def update(self, **kwargs):
+        self.model.update(kwargs)
+        self.datastore.put(self.model)
+
+    def destroy(self):
+        if not self.fetched:
+            return
+
+        self.datastore.delete(self.get_key())
+
 class Users(Model):
 
-    def __init__(self):
+    def __init__(self, data, **kwargs):
         self.ds = self.get_client()
+
+    
+
 
     def get_or_create_user(self, user):
         query = self.ds.query(kind='user')

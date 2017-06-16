@@ -1,6 +1,24 @@
+from models import users_model
 from model import Model
 from datetime import datetime, date
 from google.cloud import datastore
+
+class DuplicateUNIException(Exception):
+    pass
+
+class Student(users_model.User):
+    def register_as_student(self, **kwargs):
+        if 'uni' not in kwargs or len(kwargs['uni']) == 0:
+            raise ValueError('Students must have UNIs')
+
+        uni = kwargs['uni']
+        query = self.datastore.query(kind='user')
+        query.add_filter('uni', '=', uni)
+        conflicting_students = len(list(query.fetch()))
+        if conflicting_students > 0:
+            raise DuplicateUNIException('Student with UNI ' + uni + ' already exists.')
+
+        self.update(uni=uni)
 
 class Students(Model):
 

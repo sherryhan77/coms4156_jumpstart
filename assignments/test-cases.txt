@@ -146,17 +146,49 @@
 
 Unit Design testing
 
-1.  Promote student to TA. -- call courses_model.add_TA(uni) with valid student uni
-1a. Confirm TA shows as enrolled before and after promotion.
-1b. Promote student to TA that is not already enrolled. Should then be both enrolled and TA.
-2.  Demote student from TA.
-2a. Confirm course does not appear in TAs views: main, classes.
-2b. Confirm TA does not appear in Teacher's view for course.
-2c. Demote student from TA that is not actually TA in class: should fail gracefully.
-2d. Confirm TA still appears as enrolled in class.
-3.  Remove student from class, confirm no longer TA for class.
-3a. Re-add student to class, confirm no previous attendance records.
-3b. Re-add as TA to class, confirm no previous attendance records.
+1.  Make a student of a course also a TA of the same course
+1a. Confirm TA shows as enrolled in the course before and after promotion.
+1b. Promote student to TA that is not already enrolled. Should then be a TA but not a student.
+
+1.  Enrolling and hiring
+    - Enroll a student in a course and ensure the course has that
+      student and the student has that course.
+    - Promote that student to a TA for the course and ensure that
+      the course has that user as both a student and a TA and
+      that the user has the course both as a student and a TA
+    - Hire a TA for a course and ensure that the course has that
+      TA and the TA has that course.
+    - Enroll the TA as a student in that course and ensure that
+      the course has that user both as a student and a TA
+
+2.  Dropping and firing (Drop = remove as a student; fire = remove
+      as a TA)
+    - Drop a student from a course. Ensure the course no longer has
+      the student and the student no longer has the course. Ensure
+      no attendance records still exist for that student in that
+      course.
+    - Fire a TA from a course. Ensure the course no longer has the
+      TA and the TA no longer has the course. Ensure no attendance
+      records still exist for that TA in that course.
+    - Drop a student-TA from a course. Ensure the course no longer
+      has the user as a student, but still has the user as a TA.
+      Ensure the user still has the course. Ensure the attendance
+      records still exist for that user in that course.
+    - Fire a student-TA from a course. Ensure the course no longer
+      has the user as a TA, but still has the user as a student.
+      Ensure the user still has the course. Ensure the attendance
+      records still exist for that user in that course.
+
+3.  Remove a student from a class who is also a TA. Confirm still a TA and attendance records still exist.
+3a. Re-add TA as a student. Confirm both TA and student and records still exist.
+3b. Remove the user as both TA and student. Confirm neither TA nor student and records do not exist.
+3c. Re-add user as TA. Confirm only TA and records do not exist.
+3d. Have user sign into course again. Confirm one record exists.
+3e. Remove user as TA. Confirm neither TA nor student and records do not exist.
+3f. Re-add user as student. Confirm only student and records do not exist.
+3g. Have user sign into course again. Confirm one record exists.
+3h. Remove user as student. Confirm neither TA nor student and records do not exist.
+
 4.  Check `tas` table functionality:
 4a. Displays list of TAs for each class. - courses_model.get_TAs
 4b. Updates correctly after each test 1., 2., 3. above.
