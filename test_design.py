@@ -1,8 +1,6 @@
 from models import users_model, index_model, teachers_model, students_model, \
         courses_model, model
 
-from google.cloud import datastore
-
 import pytest
 import imhere
 
@@ -28,34 +26,29 @@ ta_user_data = {
 }
 
 def create_common_context():
-    # create users
-    teacher_id = users_model.User(**teacher_user_data).get_or_create().get_id()
-    student_id = users_model.User(**teacher_user_data).get_or_create().get_id()
-    ta_id = users_model.User(**teacher_user_data).get_or_create().get_id()
-
     # register student and TA as students
-    students_model.Student(id=student_id).register_as_student(uni='student1')
-    students_model.Student(id=ta_id).register_as_student(uni='student2')
+    student= students_model.Student(**student_user_data).get_or_create().register_as_student(uni='student1')
+    ta = students_model.Student(**ta_user_data).get_or_create().register_as_student(uni='student2')
 
     # register teacher as teacher
-    teacher = teachers_model.Teacher(teacher_id).register_as_teacher()
+    teacher = teachers_model.Teacher(**teacher_user_data).get_or_create().register_as_teacher()
 
     # create course
     course = teacher.add_course('Course 1')
 
     return {
-        'teacher_id': teacher_id,
-        'student_id': student_id,
-        'ta_id': ta_id,
-        'course_id': course['id']
+        'teacher': teacher,
+        'student': student,
+        'ta': ta,
+        'course': course
     }
 
 def destroy_context(context):
-    users_model.User(context['student_id']).destroy()
-    users_model.User(context['teacher_id']).destroy()
-    users_model.User(context['ta_id']).destroy()
+    users_model.User(id=context['student_id']).destroy()
+    users_model.User(id=context['teacher_id']).destroy()
+    users_model.User(id=context['ta_id']).destroy()
 
-    courses_model.Course(context['course_id']).destroy()
+    courses_model.Course(id=context['course_id']).destroy()
 
 def add_attendance_records(course, students, num_attendance_recs=1):
     for i in range(num_attendance_recs):
@@ -112,6 +105,7 @@ def test_dropping_and_firing():
         ta = context['ta']
         student = context['student']
 
+<<<<<<< dd8a5371d38e5df8daed82219aea5d4fd25dfbc6
         course.add_student(student)
         course.add_TA(ta)
         add_attendance_records(course, [student, ta], 2)
@@ -133,6 +127,25 @@ def test_dropping_and_firing():
 
         course.add_student(student_ta)
         course.remove_TA(student_ta)
+=======
+    course = context['course']
+    ta = context['ta']
+    course.add_student(ta)
+    if not course.has_student(ta):
+        print 'missing student?  ' + str(ta.get_id()) + ', ' + str(course.get_id())
+        course.get_all()
+
+    assert course.has_student(ta), "TA not reported as enrolled in course, fails test 1a."
+    course.add_TA(ta)     # Test 1.
+
+    if not course.has_TA(ta):
+        print 'missing TA?  ' + str(ta.get_id()) + ', ' + str(course.get_id())
+        course.get_all()
+    assert course.has_TA(ta), "TA not reported as TA for course, fails test 1., 4a."
+
+    # Usually gets up to here (after here is wrong API)
+    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 1a."
+>>>>>>> Model rewrite work
 
         assert len(course.get_attendance_records(student=student)) == 2, 'Student-TA\'s records destroyed after dropping class'
 

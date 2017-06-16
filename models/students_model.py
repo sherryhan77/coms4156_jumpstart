@@ -20,6 +20,8 @@ class Student(users_model.User):
 
         self.update(uni=uni)
 
+        return self
+
 class Students(Model):
 
     def __init__(self, sid):

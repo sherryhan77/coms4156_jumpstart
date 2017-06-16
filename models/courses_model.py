@@ -1,7 +1,107 @@
 from model import Model
+from models import students_model, users_model
 from datetime import datetime, date, timedelta
 from random import randint
 from google.cloud import datastore
+
+class Course(Model):
+    def __init__(self, **kwargs):
+        self.datastore = self.get_client()
+        self.fetched = False
+        if 'id' in kwargs:
+            key = self.datastore.key('course', kwargs['id'])
+            self.model = self.datastore.get(key)
+            self.fetched = bool(self.model)
+
+        if not self.fetched:
+            self.model = kwargs
+
+    def get_or_create(self):
+        if not self.fetched:
+            key = self.create_entity(
+                kind='course',
+                **self.model
+            )
+            self.model = self.datastore.get(key)
+            self.fetched = True
+
+        return self
+
+    def has_student(self, student):
+        if not self.fetched or not student.fetched:
+            return False
+
+        query = self.datastore.query(kind='takes')
+        query.add_filter('course_id', '=', self.get_id())
+        query.add_filter('student_id', '=', student.get_id())
+        return len(list(query.fetch())) > 0
+
+    def get_students(self):
+        if not self.fetched:
+            return list()
+
+        query = self.datastore.query(kind='takes')
+        query.add_filter('course_id', '=', self.get_id())
+        takes = list(query.fetch())
+
+        return [students_model.Student(id=take['student_id']) for take in takes]
+
+    # TODO: TESTING PURPOSES ONLY
+    def get_all(self):
+        query = self.datastore.query(kind='takes')
+        print 'takes:'
+        print list(query.fetch())
+        query = self.datastore.query(kind='tas')
+        print 'tas:'
+        print list(query.fetch())
+
+    def add_student(self, student):
+        if not student.fetched:
+            raise ValueError('Student must be saved to add to course')
+
+        if not student.is_student():
+            raise ValueError('Must add a registered student to course')
+
+        if self.has_student(student):
+            return
+
+        self.create_entity(
+            kind='takes',
+            course_id=self.get_id(),
+            student_id=student.get_id()
+        )
+
+    def get_tas(self):
+        if not self.fetched:
+            return list()
+
+        query = self.datastore.query(kind='tas')
+        query.add_filter('course_id', '=', self.get_id())
+        tas = list(query.fetch())
+
+        return [users_model.User(id=ta['ta_id']) for ta in tas]
+
+    def has_TA(self, ta):
+        if not self.fetched or not ta.fetched:
+            return False
+
+        query = self.datastore.query(kind='tas')
+        query.add_filter('course_id', '=', self.get_id())
+        query.add_filter('ta_id', '=', ta.get_id())
+        return len(list(query.fetch())) > 0
+
+    def add_TA(self, ta):
+        if not ta.fetched:
+            raise ValueError('TA must be saved to add to course')
+
+        if self.has_TA(ta):
+            return
+
+        self.create_entity(
+            kind='tas',
+            course_id=self.get_id(),
+            ta_id=ta.get_id()
+        )
 
 class Courses(Model):
 

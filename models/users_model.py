@@ -39,41 +39,22 @@ class User(Model):
             self.fetched = False
             self.model = kwargs
 
+    def is_teacher(self):
+        return self.get('teacher')
+
+    def is_student(self):
+        return bool(self.get('uni'))
+
     def get_or_create(self):
         if not self.fetched:
-            key = self.datastore.key('user')
-            entity = datastore.Entity(key=key)
-            entity.update(self.model)
-            self.datastore.put(entity)
-            model_query = self.datastore.query(kind='user')
-            model_query.add_filter('email', '=', self.model['email'])
-            users = list(model_query.fetch())
-            self.model = users[0]
+            key = self.create_entity(
+                kind='user',
+                **self.model
+            )
+            self.model = self.datastore.get(key)
             self.fetched = True
 
         return self
-
-    def get(self, key):
-        return self.model[key]
-
-    def get_id(self):
-        return self.get_key().id
-
-    def get_key(self):
-        try:
-            return self.model.key
-        except AttributeError:
-            raise 'Tried to get key of unsaved user'
-
-    def update(self, **kwargs):
-        self.model.update(kwargs)
-        self.datastore.put(self.model)
-
-    def destroy(self):
-        if not self.fetched:
-            return
-
-        self.datastore.delete(self.get_key())
 
 class Users(Model):
 
