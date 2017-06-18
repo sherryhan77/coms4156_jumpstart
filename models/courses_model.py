@@ -46,15 +46,6 @@ class Course(Model):
 
         return [students_model.Student(id=take['student_id']) for take in takes]
 
-    # TODO: TESTING PURPOSES ONLY
-    def get_all(self):
-        query = self.datastore.query(kind='takes')
-        print 'takes:'
-        print list(query.fetch())
-        query = self.datastore.query(kind='tas')
-        print 'tas:'
-        print list(query.fetch())
-
     def add_student(self, student):
         if not student.fetched:
             raise ValueError('Student must be saved to add to course')
@@ -71,7 +62,25 @@ class Course(Model):
             student_id=student.get_id()
         )
 
-    def get_tas(self):
+        assert self.has_student(student), 'Adding student didn\'t work. Must be something wrong with datastore.'
+
+    def remove_student(self, student):
+        if not student.fetched:
+            raise ValueError('Student must be saved to remove from course')
+
+        if not self.has_student(student):
+            return
+
+        query = self.datastore.query(kind='takes')
+        query.add_filter('course_id', '=', self.get_id())
+        query.add_filter('student_id', '=', student.get_id())
+
+        keys = [take.key for take in list(query.fetch())]
+        self.datastore.delete_multi(keys)
+
+        assert not self.has_student(student), 'Removing student didn\'t work. Must be something wrong with datastore.'
+
+    def get_TAs(self):
         if not self.fetched:
             return list()
 
@@ -102,6 +111,25 @@ class Course(Model):
             course_id=self.get_id(),
             ta_id=ta.get_id()
         )
+
+        assert self.has_TA(ta), 'Adding TA didn\'t work. Must be something wrong with datastore'
+
+    def remove_TA(self, ta):
+        if not ta.fetched:
+            raise ValueError('TA must be saved to remove from course')
+
+        if not self.has_TA(ta):
+            return
+
+        query = self.datastore.query(kind='tas')
+        query.add_filter('course_id', '=', self.get_id())
+        query.add_filter('ta_id', '=', ta.get_id())
+
+        keys = [t.key for t in list(query.fetch())]
+        self.datastore.delete_multi(keys)
+
+        assert not self.has_TA(ta), 'Removing TA didn\'t work. Must be something wrong with datastore'
+
 
 class Courses(Model):
 

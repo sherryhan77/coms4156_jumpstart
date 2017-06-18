@@ -105,7 +105,6 @@ def test_dropping_and_firing():
         ta = context['ta']
         student = context['student']
 
-<<<<<<< dd8a5371d38e5df8daed82219aea5d4fd25dfbc6
         course.add_student(student)
         course.add_TA(ta)
         add_attendance_records(course, [student, ta], 2)
@@ -127,25 +126,6 @@ def test_dropping_and_firing():
 
         course.add_student(student_ta)
         course.remove_TA(student_ta)
-=======
-    course = context['course']
-    ta = context['ta']
-    course.add_student(ta)
-    if not course.has_student(ta):
-        print 'missing student?  ' + str(ta.get_id()) + ', ' + str(course.get_id())
-        course.get_all()
-
-    assert course.has_student(ta), "TA not reported as enrolled in course, fails test 1a."
-    course.add_TA(ta)     # Test 1.
-
-    if not course.has_TA(ta):
-        print 'missing TA?  ' + str(ta.get_id()) + ', ' + str(course.get_id())
-        course.get_all()
-    assert course.has_TA(ta), "TA not reported as TA for course, fails test 1., 4a."
-
-    # Usually gets up to here (after here is wrong API)
-    assert ta in course.get_students(), "TA not reported as enrolled in course, fails test 1a."
->>>>>>> Model rewrite work
 
         assert len(course.get_attendance_records(student=student)) == 2, 'Student-TA\'s records destroyed after dropping class'
 
