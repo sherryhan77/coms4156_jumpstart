@@ -179,15 +179,21 @@ Unit Design testing
       Ensure the user still has the course. Ensure the attendance
       records still exist for that user in that course.
 
-3.  Remove a student from a class who is also a TA. Confirm still a TA and attendance records still exist.
-3a. Re-add TA as a student. Confirm both TA and student and records still exist.
-3b. Remove the user as both TA and student. Confirm neither TA nor student and records do not exist.
-3c. Re-add user as TA. Confirm only TA and records do not exist.
-3d. Have user sign into course again. Confirm one record exists.
-3e. Remove user as TA. Confirm neither TA nor student and records do not exist.
-3f. Re-add user as student. Confirm only student and records do not exist.
-3g. Have user sign into course again. Confirm one record exists.
-3h. Remove user as student. Confirm neither TA nor student and records do not exist.
+3.  Attendance taking
+    - Sign in a student. Attendance records total and student should
+      be 1. Student should be signed in.
+    - Sign in a TA. Attendance records total should be 2, 1 for student
+      and 1 for TA. TA should be signed in.
+    - Sign in a Student-TA. Attendance records total should be 3, 1
+      for each user existing so far. Student-TA should be signed in.
+    - Close attendance window. Try to sign in as each user. All should
+      throw Exceptions. Attendance records should be unchanged.
+    - Open and close attendance window. Attendance records
+      should be the same. All users should be signed out.
+    - Try to sign in a student with incorrect and no secret. Should not work
+      and attendance records should be the same. course.sign_in
+      should return false
+    - Try to sign in a TA without secret. Should work normally.
 
 4.  Check `tas` table functionality:
 4a. Displays list of TAs for each class. - courses_model.get_TAs

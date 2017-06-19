@@ -23,6 +23,9 @@ class Model(object):
 
         self.datastore.delete(self.get_key())
 
+        while self.datastore.get(self.get_key()):
+            pass
+
     def update(self, **kwargs):
         self.model.update(kwargs)
         self.datastore.put(self.model)
@@ -33,4 +36,11 @@ class Model(object):
         kwargs.pop('kind')
         entity.update(kwargs)
         self.datastore.put(entity)
+
+        # datastore is really annoying and it seems it doesn't always update
+        # immediately, so if we don't do this then sometimes querying the key
+        # immediately after calling this function won't work
+        while not self.datastore.get(entity.key):
+            pass
+
         return entity.key
