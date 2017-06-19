@@ -191,7 +191,6 @@ class Course(Model):
                 session = self.datastore.get(key)
                 pass
 
-
         return session['secret']
 
     def close_session(self):
@@ -208,6 +207,14 @@ class Course(Model):
         while self.get_open_session() is not None:
             pass
 
+    def session_count(self):
+        if not self.fetched:
+            return None
+
+        query = self.datastore.query(kind='attendance_window')
+        query.add_filter('course_id', '=', self.get_id())
+        query.keys_only()
+        return len(list(query.fetch()))
 
     def sign_student_in(self, student, secret=None):
         if not self.fetched:
@@ -241,6 +248,9 @@ class Course(Model):
             course_id=self.get_id()
         )
 
+        while not self.currently_signed_in(student):
+            pass
+
         return True
 
     def currently_signed_in(self, student):
@@ -272,6 +282,79 @@ class Course(Model):
                 return list()
             query.add_filter('user_id', '=', user.get_id())
         return list(query.fetch())
+
+    def get_attendance_details(self, student):
+        if not self.fetched:
+            raise ValueError('Can\'t get attendance details of an unsaved course')
+
+        if not self.has_student(student) and not self.has_TA(student):
+            return []
+
+        query = self.datastore.query(kind='attendance_window')
+        query.add_filter('course_id', '=', self.get_id())
+        windows = list(query.fetch())
+
+        query = self.datastore.query(kind='attendance_record')
+        query.add_filter('user_id', '=', student.get_id())
+        query.add_filter('course_id', '=', self.get_id())
+        records = list(query.fetch())
+
+        details = list()
+        for window in windows:
+            relevant_records = [record for record in records if record['attendance_window_id'] == window.key.id]
+            details.append({
+                'user_id': student.get_id(),
+                'session_id': window.key.id,
+                'attended': len(relevant_records) > 0
+            })
+
+        return details
+
+    def edit_attendance_history(self, **kwargs):
+        if not self.fetched:
+            raise ValueError('Can\'t change attendance of an unsaved course')
+
+        if 'student' not in kwargs and 'ta' not in kwargs:
+            raise ValueError('No student or TA specified')
+
+        if 'attended' not in kwargs:
+            raise ValueError('`attended` not specified')
+
+        if 'session_id' not in kwargs or kwargs['session_id'] is None:
+            raise ValueError('`session_id` not specified')
+
+        user = None
+        if 'student' in kwargs:
+            user = kwargs['student']
+            if not user.takes_course(self):
+                raise ValueError('Student does not take course')
+        else:
+            user = kwargs['ta']
+            if not user.tas_course(self):
+                raise ValueError('TA does not TA course')
+
+        query = self.datastore.query(kind='attendance_record')
+        query.add_filter('user_id', '=', user.get_id())
+        query.add_filter('course_id', '=', self.get_id())
+        query.add_filter('attendance_window_id', '=', kwargs['session_id'])
+        query.keys_only()
+        records = list(query.fetch())
+        record = records[0] if len(records) > 0 else None
+
+        if kwargs['attended'] == (record is not None):
+            return
+
+        if kwargs['attended']:
+            self.create_entity(
+                kind='attendance_record',
+                user_id=user.get_id(),
+                course_id=self.get_id(),
+                attendance_window_id=kwargs['session_id']
+            )
+        else:
+            self.datastore.delete_multi([r.key for r in records])
+
+
 
     def destroy(self):
         super(self.__class__, self).destroy()

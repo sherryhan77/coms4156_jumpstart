@@ -56,6 +56,19 @@ def destroy_context(context):
     context['ta'].destroy()
     context['course'].destroy()
 
+class common_context():
+    def __init__(self, after=None):
+        self.after = after
+    def __enter__(self):
+        self.context = create_common_context()
+        return self.context
+
+    def __exit__(self, *_):
+        destroy_context(self.context)
+        if self.after is not None:
+            self.after()
+
+
 def add_attendance_records(course, students, num_attendance_recs=1):
     for i in range(num_attendance_recs):
         secret = course.open_session()
@@ -73,8 +86,7 @@ def remove_from_course(student, course):
     )
 
 def test_enrolling_and_hiring():
-    context = create_common_context()
-    try:
+    with common_context() as context:
         course = context['course']
         ta = context['ta']
         student = context['student']
@@ -127,12 +139,9 @@ def test_enrolling_and_hiring():
         assert len(ta.get_taed_courses()) == 1, 'TA is hired and enrolled in 1 course, but TAed course list is {}'.format(
             ta.get_courses()
         )
-    finally:
-        destroy_context(context)
 
 def test_dropping_and_firing():
-    context = create_common_context()
-    try:
+    with common_context() as context:
         course = context['course']
         ta = context['ta']
         student = context['student']
@@ -179,14 +188,10 @@ def test_dropping_and_firing():
 
         assert len(course.get_attendance_records(ta=student_ta)) == 2, 'Student-TA\'s records destroyed after dropping class'
 
-    finally:
-        destroy_context(context)
-
 
 def test_attendance_taking():
-    context = create_common_context()
     student_ta = students_model.Student(**other_user_data).get_or_create().register_as_student(uni='oooh')
-    try:
+    with common_context(lambda : student_ta.destroy()) as context:
         course = context['course']
         ta = context['ta']
         student = context['student']
@@ -240,9 +245,136 @@ def test_attendance_taking():
         assert not student.sign_in(course), 'Sign in succeeded for Student with no secret'
         assert len(course.get_attendance_records()) == 4, 'Student sign in without secret changed course attendance records to'.format(len(course.get_attendance_records()))
         assert len(course.get_attendance_records(student=student)) == 1, 'Student sign in without secret changed student attendance records to {}'.format(len(course.get_attendance_records(student=student)))
-    finally:
-        student_ta.destroy()
-        destroy_context(context)
+
+def test_attendance_windows():
+    with common_context() as context:
+        course = context['course']
+        assert course.session_count() == 0, 'Session count started at {}'.format(course.session_count())
+        secret = course.open_session()
+        assert isinstance(secret, long), 'Session secret is not a long'
+        session = course.get_open_session()
+        assert session is not None, 'Session is None after .open_session()'
+        assert session['secret'] == secret, '.open_session() returned a different secret than session[\'secret\']'
+        assert course.session_count() == 1, 'Session count is {} after opening session'.format(course.session_count())
+        course.close_session()
+        assert course.get_open_session() is None, 'After .close_session(), session is {}'.format(course.get_open_session())
+        assert course.session_count() == 1, 'Closing session changed session count to {}'.format(course.session_count())
+
+        course.open_session()
+        assert course.session_count() == 2, 'Session count is {} after opening second session'.format(course.session_count())
+        course.close_session()
+
+        assert course.session_count() == 2, 'Session count is {} after closing second session'.format(course.session_count())
+        course.close_session()
+        assert course.session_count() == 2, 'Session count is {} after closing second session for the second time'.format(course.session_count())
+        assert course.get_open_session() is None, 'Session is {} after closing second session for the second time'.format(course.get_open_session())
+
+def test_attendance_manipulation():
+    with common_context() as context:
+        course = context['course']
+        student = context['student']
+        ta = context['ta']
+        course.add_student(student)
+
+        state = {
+            'attendances': {},
+            'sessions': list(),
+            'secret': None,
+            'user': None
+        }
+        def test():
+            attendances = state['attendances'][state['user'].get_id()]
+            expected = [
+                {
+                    'user_id': state['user'].get_id(),
+                    'session_id': state['sessions'][i],
+                    'attended': attendances[i]
+                }
+                for i in range(len(state['sessions']))
+            ]
+
+            if len(attendances) > 0:
+                assert course.currently_signed_in(state['user']) == (attendances[-1] and state['secret'] is not None), 'course.currently_signed_in(student) incorrect'
+            else:
+                assert not course.currently_signed_in(state['user']), 'course.current_signed_in(student) is True despite no open window'
+
+            details = course.get_attendance_details(state['user'])
+            assert details == expected, 'Attendance details incorrect for iteration {}'.format(len(state['sessions']) + 1)
+
+        def open():
+            state['secret'] = course.open_session()
+            state['sessions'].append(course.get_open_session().key.id)
+            state['attendances'][state['user'].get_id()].append(False)
+            test()
+
+        def close():
+            course.close_session()
+            state['secret'] = None
+            test()
+
+        def login():
+            if state['secret'] is None:
+                with pytest.raises(courses_model.CourseNotTakingAttendance):
+                    state['user'].sign_in(course, state['secret'])
+            elif state['attendances'][state['user'].get_id()][-1]:
+                with pytest.raises(ValueError, message='Student already signed into session'):
+                    state['user'].sign_in(course, state['secret'])
+            else:
+                state['attendances'][state['user'].get_id()][-1] = True
+                state['user'].sign_in(course, state['secret'])
+
+            test()
+
+        def mutate(index, attended):
+            mutation = {
+                'session_id': state['sessions'][index],
+                'attended': attended
+            }
+
+            if state['user'].tas_course(course):
+                mutation['ta'] = state['user']
+            elif state['user'].takes_course(course):
+                mutation['student'] = state['user']
+
+            course.edit_attendance_history(**mutation)
+            state['attendances'][state['user'].get_id()][index] = attended
+            test()
+
+        def routine():
+            test()
+            open()
+            login()
+            login()
+            close()
+            open()
+            close()
+            mutate(0, False)
+            mutate(0, False)
+            mutate(1, True)
+            mutate(1, True)
+            mutate(1, False)
+
+        def change_user(user):
+            if user.get_id() not in state['attendances']:
+                state['attendances'][user.get_id()] = []
+            attendances = state['attendances'][user.get_id()]
+            # catch attendances up (assume we haven't signed in since we were last on this user)
+            for i in range(len(attendances), len(state['sessions'])):
+                attendances.append(False)
+            state['user'] = user
+
+        course.add_student(student)
+        change_user(student)
+        routine()
+        course.add_TA(student)
+        routine()
+        course.remove_student(student)
+        routine()
+        course.add_TA(ta)
+        change_user(ta)
+        routine()
+
+
 
 def test_student_registration():
     students_model.Student(uni='one').destroy()

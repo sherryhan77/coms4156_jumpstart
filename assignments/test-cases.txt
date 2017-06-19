@@ -146,10 +146,6 @@
 
 Unit Design testing
 
-1.  Make a student of a course also a TA of the same course
-1a. Confirm TA shows as enrolled in the course before and after promotion.
-1b. Promote student to TA that is not already enrolled. Should then be a TA but not a student.
-
 1.  Enrolling and hiring
     - Enroll a student in a course and ensure the course has that
       student and the student has that course.
@@ -195,15 +191,59 @@ Unit Design testing
       should return false
     - Try to sign in a TA without secret. Should work normally.
 
-4.  Check `tas` table functionality:
-4a. Displays list of TAs for each class. - courses_model.get_TAs
-4b. Updates correctly after each test 1., 2., 3. above.
-5.  Open session window as TA.
-6.  Close session window as TA.
-7.  Confirm student can sign in to TA created session window.
-8.  Confirm TA can sign in to session window -- using inherited .insert_attendance_record() method works.
-8a. Confirm TA can sign in to session window -- using TA class view and entering correct secret code works.
-8b. Confirm TA can sign in to session window -- using TA class view and entering incorrect secret code fails.
-9.  Confirm TA can view TA'd courses - tas_model.get_courses
-10. Confirm TA can view TA'd courses with an open window -- tas_model.get_courses_with_session
+4.  Attendance windows
+    - Ensure course.session_count() is 0 to start.
+    - Ensure course.get_open_session() starts as None.
+    - Open session. Assert .open_session() returns a numerical secret
+    - Ensure course.get_open_session() is not None and has a secret equivalent
+      to secret gleaned from .open_session()
+    - Close session.
+    - Ensure course.get_open_session() is None.
+    - Ensure course.session_count() is 1.
+    - Open session.
+    - Ensure course.session_count() is 2.
+    - Close session.
+    - Ensure course.session_count() is still 2.
+    - Close session.
+    - Ensure course.session_count() is still 2.
+    - Ensure course.get_open_session() is None.
 
+5.  Attendance manipulation
+    - Ensure course.get_attendance_details(student) is an empty list
+    - Open course window.
+    - Ensure course.get_attendance_details(student) has the following:
+        [
+          { 'user_id': <student's id>, 'session_id': <session_id>, 'attended': False }
+        ]
+    - Sign in as student.
+    - Ensure course.get_attendance_details(student) has the following:
+        [
+          { 'user_id': <student's id>, 'session_id': <session_id>, 'attended': True }
+        ]
+    - Try to sign again; ensure it fails
+    - Ensure course.get_attendance_details(student) has not changes
+    - Close course window.
+    - Ensure course.get_attendance_details(student) has not changed.
+    - Open course window.
+    - Ensure course.get_attendance_details(student) has the following:
+        [
+          { 'user_id': <student's id>, 'session_id': <old session id>, 'attended': True },
+          { 'user_id': <student's id>, 'session_id': <new session id>, 'attended': False },
+        ]
+    - Call course.edit_attendance_history(student=student, session_id=<new session id>, attended=<True>)
+    - Ensure second entry in detail switches to 'attended'=True
+    - Close course window.
+    - Ensure details have not changed
+    - Ensure course.get_attendance_details(student) has not changed.
+    - Call course.edit_attendance_history(student=student, session_id=<old session id>, attended=<False>)
+    - Ensure first entry in details switches to 'attended'=False
+    - Call course.edit_attendance_history(student=student, session_id=<old session id>, attended=<False>)
+    - Ensure details have not changed
+    - Call course.edit_attendance_history(student=student, session_id=<new session id>, attended=<True>)
+    - Ensure details have not changed
+    - Ensure course.currently_signed_in(student) is True
+    - Call course.edit_attendance_history(student=student, session_id=<new session id>, attended=<True>)
+    - Ensure details have not changed
+    - Ensure course.currently_signed_in(student) is True
+    - Call course.edit_attendance_history(student=student, session_id=<new session id>, attended=<False>)
+    - Repeat for ta and student_ta
