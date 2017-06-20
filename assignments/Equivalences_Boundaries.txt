@@ -1,0 +1,7 @@
+Equivalences and Boundaries
+
+- Teacher, Student, TA, and superclass User all have equivalent:
+    • sign_in (meaning to log in to the app) operations
+    • user-identifying data: email, name, password
+- Student and TA have equivalent sign_into_session, session info gathering, course membership info gathering, course enrolling and course leaving operations.
+- Teacher and TA both have equivalent get_attendance_records, open session, close session and session info gathering operations.
