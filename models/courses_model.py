@@ -4,8 +4,10 @@ from datetime import datetime, date, timedelta
 from random import randint
 from google.cloud import datastore
 
+
 class CourseNotTakingAttendance(Exception):
     pass
+
 
 class Course(Model):
     def __init__(self, **kwargs):
@@ -65,7 +67,8 @@ class Course(Model):
             student_id=student.get_id()
         )
 
-        assert self.has_student(student), 'Adding student didn\'t work. Must be something wrong with datastore.'
+        assert self.has_student(student), (
+            'Adding student didn\'t work. Must be something wrong with datastore.')
 
     def remove_student(self, student):
         if not student.fetched:
@@ -93,7 +96,8 @@ class Course(Model):
         while self.has_student(student):
             pass
 
-        assert not self.has_student(student), 'Removing student didn\'t work. Must be something wrong with datastore.'
+        assert not self.has_student(student), (
+            'Removing student didn\'t work. Must be something wrong with datastore.')
 
     def get_TAs(self):
         if not self.fetched:
@@ -156,7 +160,8 @@ class Course(Model):
         while self.has_TA(ta):
             pass
 
-        assert not self.has_TA(ta), 'Removing TA didn\'t work. Must be something wrong with datastore'
+        assert not self.has_TA(ta), (
+            'Removing TA didn\'t work. Must be something wrong with datastore')
 
     def get_open_session(self):
         if not self.fetched:
@@ -170,7 +175,6 @@ class Course(Model):
             return None
 
         return sessions[0]
-
 
     def open_session(self):
         if not self.fetched:
@@ -301,7 +305,8 @@ class Course(Model):
 
         details = list()
         for window in windows:
-            relevant_records = [record for record in records if record['attendance_window_id'] == window.key.id]
+            relevant_records = [record for record in records
+                                if record['attendance_window_id'] == window.key.id]
             details.append({
                 'user_id': student.get_id(),
                 'session_id': window.key.id,
@@ -353,8 +358,6 @@ class Course(Model):
             )
         else:
             self.datastore.delete_multi([r.key for r in records])
-
-
 
     def destroy(self):
         super(self.__class__, self).destroy()
@@ -495,7 +498,6 @@ class Courses(Model):
             'active': 0
         })
         self.ds.put(entity)
-
 
     def open_session(self):
         '''Opens a session for this course

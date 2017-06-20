@@ -147,66 +147,69 @@
 Unit Design testing
 
 1.  Enrolling and hiring
-    - Enroll a student in a course and ensure the course has that
+    + Enroll a student in a course and ensure the course has that
       student and the student has that course.
-    - Promote that student to a TA for the course and ensure that
+    + Promote that student to a TA for the course and ensure that
       the course has that user as both a student and a TA and
       that the user has the course both as a student and a TA
-    - Hire a TA for a course and ensure that the course has that
+    + Hire a TA for a course and ensure that the course has that
       TA and the TA has that course.
-    - Enroll the TA as a student in that course and ensure that
+    + Enroll the TA as a student in that course and ensure that
       the course has that user both as a student and a TA
 
 2.  Dropping and firing (Drop = remove as a student; fire = remove
       as a TA)
-    - Drop a student from a course. Ensure the course no longer has
+    + Drop a student from a course. Ensure the course no longer has
       the student and the student no longer has the course. Ensure
       no attendance records still exist for that student in that
       course.
-    - Fire a TA from a course. Ensure the course no longer has the
+    + Fire a TA from a course. Ensure the course no longer has the
       TA and the TA no longer has the course. Ensure no attendance
       records still exist for that TA in that course.
-    - Drop a student-TA from a course. Ensure the course no longer
+    + Drop a student-TA from a course. Ensure the course no longer
       has the user as a student, but still has the user as a TA.
       Ensure the user still has the course. Ensure the attendance
       records still exist for that user in that course.
-    - Fire a student-TA from a course. Ensure the course no longer
+    + Fire a student-TA from a course. Ensure the course no longer
       has the user as a TA, but still has the user as a student.
       Ensure the user still has the course. Ensure the attendance
       records still exist for that user in that course.
 
 3.  Attendance taking
-    - Sign in a student. Attendance records total and student should
+    + Sign in a student. Attendance records total and student should
       be 1. Student should be signed in.
-    - Sign in a TA. Attendance records total should be 2, 1 for student
+    + Sign in a TA. Attendance records total should be 2, 1 for student
       and 1 for TA. TA should be signed in.
-    - Sign in a Student-TA. Attendance records total should be 3, 1
+    + Sign in a Student-TA. Attendance records total should be 3, 1
       for each user existing so far. Student-TA should be signed in.
-    - Close attendance window. Try to sign in as each user. All should
+    + Close attendance window. Try to sign in as each user. All should
       throw Exceptions. Attendance records should be unchanged.
-    - Open and close attendance window. Attendance records
+    + Open and close attendance window. Attendance records
       should be the same. All users should be signed out.
-    - Try to sign in a student with incorrect and no secret. Should not work
+    + Try to sign in a student with incorrect and no secret. Should not work
       and attendance records should be the same. course.sign_in
       should return false
-    - Try to sign in a TA without secret. Should work normally.
+    + Try to sign in a TA without secret. Should work normally.
 
 4.  Attendance windows
-    - Ensure course.session_count() is 0 to start.
-    - Ensure course.get_open_session() starts as None.
-    - Open session. Assert .open_session() returns a numerical secret
-    - Ensure course.get_open_session() is not None and has a secret equivalent
+    + Ensure course.session_count() is 0 to start.
+    + Ensure course.get_open_session() starts as None.
+    + Open session. Assert .open_session() returns a numerical secret
+    + Ensure course.get_open_session() is not None and has a secret equivalent
       to secret gleaned from .open_session()
-    - Close session.
-    - Ensure course.get_open_session() is None.
-    - Ensure course.session_count() is 1.
-    - Open session.
-    - Ensure course.session_count() is 2.
-    - Close session.
-    - Ensure course.session_count() is still 2.
-    - Close session.
-    - Ensure course.session_count() is still 2.
-    - Ensure course.get_open_session() is None.
+    + Close session.
+    + Ensure course.get_open_session() is None.
+    + Ensure course.session_count() is 1.
+    + Open session, note numerical secret.
+    + Ensure course.session_count() is 2.
+    + Open session. Assert .open_session() returns same numerical secret.
+    + Ensure course.session_count() is still 2.
+    + Ensure course.get_open_session() is same numerical secret.
+    + Close session.
+    + Ensure course.session_count() is still 2.
+    + Close session.
+    + Ensure course.session_count() is still 2.
+    + Ensure course.get_open_session() is None.
 
 5.  Attendance manipulation
     - Ensure course.get_attendance_details(student) is an empty list
@@ -247,3 +250,9 @@ Unit Design testing
     - Ensure course.currently_signed_in(student) is True
     - Call course.edit_attendance_history(student=student, session_id=<new session id>, attended=<False>)
     - Repeat for ta and student_ta
+
+6.  Course creation and deletion
+    + Create a course. Ensure it has no students, no TAs, no open session, and session count is 0.
+    + Add a student, TA to course. Create some attendance records.
+    + Delete the course.
+    + Assert the course has no students, no TAs, no open session, and session count is 0.

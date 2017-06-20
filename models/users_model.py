@@ -1,6 +1,7 @@
 from model import Model
 from google.cloud import datastore
 
+
 class User(Model):
     def __init__(self, **kwargs):
         self.datastore = self.get_client()
@@ -56,13 +57,11 @@ class User(Model):
 
         return self
 
+
 class Users(Model):
 
     def __init__(self, data, **kwargs):
         self.ds = self.get_client()
-
-    
-
 
     def get_or_create_user(self, user):
         query = self.ds.query(kind='user')
@@ -71,17 +70,16 @@ class Users(Model):
         if result:
             print result
         else:
-            try:
-                key = self.ds.key('user')
-                entity = datastore.Entity(
-                    key=key)
-                entity.update(user)
-                self.ds.put(entity)
-            except:  # TODO
-                pass
+            # try:
+            key = self.ds.key('user')
+            entity = datastore.Entity(
+                key=key)
+            entity.update(user)
+            self.ds.put(entity)
+            # except:  # TODO
+            #     pass
         result = list(query.fetch())
         return result[0]['id']
-
 
     def is_valid_uni(self, uni):
         query = self.ds.query(kind='student')
