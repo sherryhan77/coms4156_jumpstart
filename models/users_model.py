@@ -41,10 +41,10 @@ class User(Model):
             self.model = kwargs
 
     def is_teacher(self):
-        return self.get('teacher')
+        return self.get('teacher', False)
 
     def is_student(self):
-        return bool(self.get('uni'))
+        return self.get('uni') is not None
 
     def get_or_create(self):
         if not self.fetched:
@@ -60,7 +60,7 @@ class User(Model):
 
 class Users(Model):
 
-    def __init__(self, data, **kwargs):
+    def __init__(self):
         self.ds = self.get_client()
 
     def get_or_create_user(self, user):

@@ -1,0 +1,14 @@
+{% if student: %}
+  <h2>You take:</h2>
+  <p>TK</p>
+{% else: %}
+  <form method="POST" action="/register" style="text-align: center;">
+    <h4>You are not a Student</h4>
+    <input type="hidden" name="register_as" value="student">
+    <label for="uni-input">
+      UNI:
+      <input id="uni-input" name="uni" type="text" placeholder="UNI">
+    </label>
+    <input type="submit" value="Register as Teacher">
+  </form>
+{% endif %}

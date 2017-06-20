@@ -5,8 +5,8 @@ class Model(object):
     def get_client(self):
         return datastore.Client('coms4156-168718')
 
-    def get(self, key):
-        return self.model[key]
+    def get(self, key, fallback=None):
+        return self.model.get(key, fallback)
 
     def get_id(self):
         return self.get_key().id
