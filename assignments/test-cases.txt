@@ -200,8 +200,11 @@ Unit Design testing
     - Close session.
     - Ensure course.get_open_session() is None.
     - Ensure course.session_count() is 1.
-    - Open session.
+    - Open session, note numerical secret.
     - Ensure course.session_count() is 2.
+    - Open session. Assert .open_session() returns same numerical secret.
+    - Ensure course.session_count() is still 2.
+    - Ensure course.get_open_session() is same numerical secret.
     - Close session.
     - Ensure course.session_count() is still 2.
     - Close session.

@@ -154,7 +154,7 @@ def test_dropping_and_firing():
 
         assert len(course.get_attendance_records(student=student)) == 0, 'Student\'s records not destroyed after dropping class'
 
-        assert len(course.get_attendance_records(ta=ta)) == 0, 'TA\'s records not destroyed after dropping class'
+        assert len(course.get_attendance_records(ta=ta)) == 0, 'TA\'s records not destroyed after fired from class'
         assert not course.has_student(student), 'Course still has student after dropping'
         assert not student.takes_course(course), 'Student till takes course after dropping'
         assert len(student.get_courses()) == 0, 'Student takes no course, but course list is {}'.format(student.get_courses())
@@ -167,8 +167,8 @@ def test_dropping_and_firing():
         course.add_TA(student_ta)
         add_attendance_records(course, [student_ta], 2)
         course.remove_student(student_ta)
-        assert course.has_TA(student_ta), 'Course does not have Student-TA after dropping'
-        assert student_ta.tas_course(course), 'Student-TA does not TA course after dropping'
+        assert course.has_TA(student_ta), 'Course not TA\'d by Student-TA after only dropping'
+        assert student_ta.tas_course(course), 'Student-TA does not TA course after only dropping'
         assert len(student_ta.get_taed_courses()) == 1, 'Student-TA TAs one course but TAed course list is {}'.format(student_ta.get_taed_courses())
         assert not course.has_student(student_ta), 'Course has Student-TA after dropping'
         assert not student_ta.takes_course(course), 'Student-TA takes course after dropping'
@@ -179,7 +179,7 @@ def test_dropping_and_firing():
         course.add_student(student_ta)
         course.remove_TA(student_ta)
 
-        assert not course.has_TA(student_ta), 'Course has Student-TA after firing'
+        assert not course.has_TA(student_ta), 'Course has Student-TA as TA after firing'
         assert not student_ta.tas_course(course), 'Student-TA TAs course after firing'
         assert len(student_ta.get_taed_courses()) == 0, 'Student-TA TAs no courses but TAed course list is {}'.format(student_ta.get_taed_courses())
         assert course.has_student(student_ta), 'Course does not have Student-TA after firing'
