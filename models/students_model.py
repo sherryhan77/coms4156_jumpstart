@@ -1,4 +1,5 @@
 from models import courses_model, users_model
+import models
 from model import Model
 from datetime import datetime
 from google.cloud import datastore
@@ -47,20 +48,11 @@ class Student(users_model.User):
         takes = list(query.fetch())
         return [courses_model.Course(id=take['course_id']) for take in takes]
 
-    def tas_course(self, course):
+    def as_TA(self):
         if not self.fetched:
-            raise ValueError('TA must be saved to TA a course')
+            return models.tas_model.TA(**self.model)
 
-        return course.has_TA(self)
-
-    def get_taed_courses(self):
-        if not self.fetched:
-            raise ValueError('TA must be saved to TA a course')
-
-        query = self.datastore.query(kind='tas')
-        query.add_filter('ta_id', '=', self.get_id())
-        tas = list(query.fetch())
-        return [courses_model.Course(id=ta['course_id']) for ta in tas]
+        return models.tas_model.TA(id=self.get_id())
 
 
 class Students(Model):
