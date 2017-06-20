@@ -1,5 +1,5 @@
 from models import users_model, index_model, teachers_model, students_model, \
-        courses_model, model
+    courses_model, model, tas_model
 
 import pytest
 import imhere
@@ -37,7 +37,7 @@ def create_common_context():
     # register student and TA as students
     student = students_model.Student(**student_user_data).get_or_create().register_as_student(
         uni='student1')
-    ta = students_model.Student(**ta_user_data).get_or_create().register_as_student(uni='student2')
+    ta = tas_model.TA(**ta_user_data).get_or_create().register_as_student(uni='student2')
 
     # register teacher as teacher
     teacher = teachers_model.Teacher(**teacher_user_data).get_or_create().register_as_teacher()
@@ -97,15 +97,17 @@ def test_enrolling_and_hiring():
         assert not course.has_TA(student), (
             'Student reported as TA for course after only enrollment')
         assert student.takes_course(course), 'Student doesn\'t take course after enrollment'
-        assert not student.tas_course(course), 'Student TAs course after only enrollment'
+        assert not student.as_TA().tas_course(course), 'Student TAs course after only enrollment'
         assert len(student.get_courses()) == 1, (
-            'Student is enrolled in 1 course, but course list is {}'.format(student.get_courses()))
-        assert len(student.get_taed_courses()) == 0, (
+            'Student is enrolled in 1 course, but course list is {}'.format(student.get_courses())
+        )
+        assert len(student.as_TA().get_taed_courses()) == 0, (
             'Student doesn\'t TA any courses, but TAed course list is {}'.format(
                 student.get_taed_courses())
         )
 
-        course.add_TA(student)
+        student_as_ta = student.as_TA()
+        course.add_TA(student_as_ta)
         assert course.has_student(student), (
             "Student not reported as enrolled in course after hiring")
         assert course.has_TA(student), 'Student not reported as TA for course after hiring'
@@ -114,8 +116,8 @@ def test_enrolling_and_hiring():
             'Student is enrolled and hired in 1 course, but course list is {}'.format(
                 student.get_courses())
         )
-        assert student.tas_course(course), 'Student doesn\'t TA course after hiring'
-        assert len(student.get_taed_courses()) == 1, (
+        assert student_as_ta.tas_course(course), 'Student doesn\'t TA course after hiring'
+        assert len(student_as_ta.get_taed_courses()) == 1, (
             'Student is enrolled and hired in 1 course, but TAed course list is {}'.format(
                 student.get_courses())
         )
@@ -410,8 +412,8 @@ def test_attendance_manipulation():
                 'attended': attended
             }
 
-            if state['user'].tas_course(course):
-                mutation['ta'] = state['user']
+            if state['user'].as_TA().tas_course(course):
+                mutation['ta'] = state['user'].as_TA()
             elif state['user'].takes_course(course):
                 mutation['student'] = state['user']
 
