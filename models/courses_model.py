@@ -301,7 +301,8 @@ class Course(Model):
 
         details = list()
         for window in windows:
-            relevant_records = [record for record in records if record['attendance_window_id'] == window.key.id]
+            relevant_records = [record for record in records
+                                if record['attendance_window_id'] == window.key.id]
             details.append({
                 'user_id': student.get_id(),
                 'session_id': window.key.id,
