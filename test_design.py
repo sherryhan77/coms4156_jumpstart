@@ -51,22 +51,17 @@ def create_common_context():
     }
 
 def destroy_context(context):
-    context['student'].destroy()
-    context['teacher'].destroy()
-    context['ta'].destroy()
-    context['course'].destroy()
+    for key in context:
+        context[key].destroy()
+
 
 class common_context():
-    def __init__(self, after=None):
-        self.after = after
     def __enter__(self):
         self.context = create_common_context()
         return self.context
 
     def __exit__(self, *_):
         destroy_context(self.context)
-        if self.after is not None:
-            self.after()
 
 
 def add_attendance_records(course, students, num_attendance_recs=1):
@@ -190,8 +185,9 @@ def test_dropping_and_firing():
 
 
 def test_attendance_taking():
-    student_ta = students_model.Student(**other_user_data).get_or_create().register_as_student(uni='oooh')
-    with common_context(lambda : student_ta.destroy()) as context:
+    with common_context() as context:
+        context['student_ta'] = students_model.Student(**other_user_data).get_or_create().register_as_student(uni='oooh')
+        student_ta = context['student_ta']
         course = context['course']
         ta = context['ta']
         student = context['student']
@@ -245,6 +241,9 @@ def test_attendance_taking():
         assert not student.sign_in(course), 'Sign in succeeded for Student with no secret'
         assert len(course.get_attendance_records()) == 4, 'Student sign in without secret changed course attendance records to'.format(len(course.get_attendance_records()))
         assert len(course.get_attendance_records(student=student)) == 1, 'Student sign in without secret changed student attendance records to {}'.format(len(course.get_attendance_records(student=student)))
+
+    assert not students_model.Student(**student_user_data).fetched, "User with id \'student1\' still exists after context destruction."
+    assert not students_model.Student(**other_user_data).fetched, ("User with id \'oooh\' still exists after context destruction.")
 
 def test_attendance_windows():
     with common_context() as context:
