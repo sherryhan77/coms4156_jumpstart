@@ -1,6 +1,23 @@
 from model import Model
 from datetime import datetime, date
 from google.cloud import datastore
+from models import courses_model, users_model
+
+
+class Teacher(users_model.User):
+    def register_as_teacher(self):
+        self.update(teacher=True)
+        return self
+
+    def add_course(self, name):
+        course = courses_model.Course(name=name).get_or_create()
+        self.create_entity(
+            kind='teaches',
+            teacher_id=self.get_id(),
+            course_id=course.get_id()
+        )
+        return course
+
 
 class Teachers(Model):
 
@@ -43,7 +60,6 @@ class Teachers(Model):
 
         # result = courses + sessions
         return courses
-
 
     def add_course(self, course_name):
         key = self.ds.key('courses')
