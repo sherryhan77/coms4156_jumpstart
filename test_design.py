@@ -316,6 +316,9 @@ def test_attendance_windows():
         course = context['course']
         assert course.session_count() == 0, 'Session count started at {}'.format(
             course.session_count())
+        assert course.get_open_session() is None, (
+            'course.get_open_session() starting as {} instead of None.'.format(
+                course.get_open_session()))
         secret = course.open_session()
         assert isinstance(secret, long), 'Session secret is not a long'
         session = course.get_open_session()
@@ -330,9 +333,15 @@ def test_attendance_windows():
         assert course.session_count() == 1, (
             'Closing session changed session count to {}'.format(course.session_count()))
 
-        course.open_session()
+        secret2 = course.open_session()
         assert course.session_count() == 2, (
             'Session count is {} after opening second session'.format(course.session_count()))
+        assert secret2 == course.open_session(), (
+            'Attempting to open session during existing open session fails to return secret of \
+            existing session.')
+        session2 = course.get_open_session()
+        assert session2['secret'] == secret2, (
+            '.open_session() returned a different secret than session2[\'secret\']')
         course.close_session()
 
         assert course.session_count() == 2, (
@@ -473,3 +482,27 @@ def test_student_registration():
         ta.register_as_student()
 
     ta.register_as_student(uni='two')
+
+
+def test_course_creation_deletion():
+    with common_context() as context:
+        course = context['course']
+        teacher = context['teacher']
+        student = context['student']
+        ta = context['ta']
+
+        assert not course.get_students(), 'New course has students.'
+        assert not course.get_TAs(), 'New course has TAs.'
+        assert course.get_open_session() is None, 'New course has open session.'
+        assert course.session_count == 0, 'New course has non-zero session count.'
+
+        course.add_student(student)
+        course.add_TA(student)
+        add_attendance_records(course, [student, ta], 2)
+
+        teacher.remove_course(course)
+
+        assert not course.get_students(), 'Deleted course has students.'
+        assert not course.get_TAs(), 'Deleted course has TAs.'
+        assert course.get_open_session() is None, 'Deleted course has open session.'
+        assert course.session_count, 'Deleted course has a session count.'
