@@ -45,14 +45,6 @@ def templated(template=None):
         return decorated_function
     return decorator
 
-def common_view_variables():
-    return merge_dicts(
-        request.user_models,
-        {
-            'messages': request.messages
-        }
-    )
-
 def must_be_teacher(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -60,20 +52,13 @@ def must_be_teacher(f):
         if teacher is None:
             return flask.redirect(url_for('home'))
 
-        course_id = kwargs.get('course_id', None)
-        if course_id is not None:
-            course = courses_model.Course(id=course_id)
-            if not teacher.teaches_course(course):
-                abort(403)
-            kwargs['course'] = course
+        course = kwargs.get('course', None)
+        if course and not teacher.teaches_course(course):
+            abort(403)
 
-        student_id = kwargs.get('student_id', None)
-        if student_id is not None:
-            course = courses_model.Course(id=course_id)
-            student = students_model.Student(id=student_id)
-            if not student.takes_course(course):
-                raise ValueError('Student is not in course')
-            kwargs['student'] = student
+        student = kwargs.get('student', None)
+        if student and not student.takes_course(course):
+            raise ValueError('Student is not in course')
         return f(*args, **kwargs)
     return decorated
 
@@ -85,12 +70,10 @@ def must_be_teacher_or_ta(f):
         if teacher is None and ta is None:
             return flask.redirect(url_for('home'))
 
-        course_id = kwargs.get('course_id', None)
-        if course_id is not None:
-            course = courses_model.Course(id=course_id)
-            if not teacher.teaches_course(course) and not ta.tas_course(course):
-                abort(403)
-            kwargs['course'] = course
+        course = kwargs.get('course', None)
+
+        if course and not teacher.teaches_course(course) and not ta.tas_course(course):
+            abort(403)
         return f(*args, **kwargs)
     return decorated
 
@@ -103,6 +86,28 @@ def must_be_signed_in(f):
             return f(*args, **kwargs)
         return flask.redirect(url_for('home'))
     return decorated
+
+def common_view_variables():
+    return merge_dicts(
+        request.user_models,
+        {
+            'messages': request.messages
+        }
+    )
+
+@app.url_value_preprocessor
+def convert_params(endpoint, values):
+    if 'course_id' in values:
+        course = courses_model.Course(id=values['course_id'])
+        if not course.fetched:
+            raise ValueError('Course does not exist')
+        values['course'] = course
+
+    if 'student_id' in values:
+        student = students_model.Student(id=values['student_id'])
+        if not student.fetched:
+            raise ValueError('Student does not exist')
+        values['student'] = student
 
 # make sure user is authenticated w/ live session on every request
 @app.before_request
@@ -172,6 +177,16 @@ def open_session(course, **kwargs):
 def close_session(course, **kwargs):
     course.close_session()
     return flask.redirect(request.referrer or url_for('home'))
+
+@app.route('/courses/<int:course_id>/sessions/current/sign-in', methods=['POST'])
+def sign_in(course):
+    signer = request.user_models.get('student', None) or request.user_models.get('ta', None)
+    if not course.has_student(signer) and not course.has_TA(ta):
+        raise ValueError('User must be in course to sign in')
+
+    course.sign_student_in(signer)
+    return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
 @must_be_teacher

@@ -227,6 +227,9 @@ class Course(Model):
         if not student.fetched:
             raise ValueError('Student must be saved to sign in')
 
+        if not self.has_student(student) and not self.has_TA(student):
+            raise ValueError('Student must be in course to sign in')
+
         session = self.get_open_session()
 
         if session is None:
