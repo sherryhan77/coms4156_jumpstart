@@ -5,10 +5,11 @@
   <title>{{ course.get('name') }}</title>
 </head>
 <body>
+  <a href="/">Home</a>
   {% include 'partials/messages.html' %}
   <div style="padding: 20px; margin: 0 auto; max-width: 900px;">
     <center><h2>I'm Here</h2></center>
-    <center><h1>{{ course.get('name') }}</title>
+    <center><h1>{{ course.get('name') }}</h1></center>
     <!-- Attendance window management -->
     {% set session = course.get_open_session() %}
     {% if session is none: %}
@@ -24,19 +25,49 @@
       </form>
     {% endif %}
 
-    <h3>Students</h3>
+    {% if teacher and teacher.teaches_course(course) %}
+      <h3>Students</h3>
+      Add Student to Class:<br>
+      <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
+          <input type="text" required name="uni" placeholder="UNI">
+          <br>
+          <input type="submit" value="Add">
+      </form>
+    {% endif %}
 
-    <table cellspacing="35">
+    <br>
+    <br>
+
+    <table border="1">
       <thead>
         <tr>
-          <th>
-            Add Student to Class:<br>
-            <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
-                <input type="text" required name="uni" placeholder="UNI">
-                <br>
-                <input type="submit" value="Add">
-            </form>
-          </th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Record</th>
+          {% if teacher and teacher.teaches_course(course) %}
+            <th>Remove</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set students = course.get_students() %}
+        {% set session_count = course.session_count() %}
+        {% for student in students: %}
+          <tr>
+            <td>{{ student.get('name', '<unnamed>') }}</td>
+            <td>{{ student.get('email', '<no email>') }}</td>
+            <td>{{ course.get_attendance_records(student=student)|length }}/{{ session_count }}</td>
+            {% if teacher and teacher.teaches_course(course) %}
+              <td>
+                <form method="POST" action="{{ url_for('remove_student_from_course', course_id=course.get_id(), student_id=student.get_id()) }}?delete=true">
+                  <input type="submit" value="Remove">
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
   </div>
 </body>

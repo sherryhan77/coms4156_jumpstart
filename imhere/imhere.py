@@ -66,6 +66,14 @@ def must_be_teacher(f):
             if not teacher.teaches_course(course):
                 abort(403)
             kwargs['course'] = course
+
+        student_id = kwargs.get('student_id', None)
+        if student_id is not None:
+            course = courses_model.Course(id=course_id)
+            student = students_model.Student(id=student_id)
+            if not student.takes_course(course):
+                raise ValueError('Student is not in course')
+            kwargs['student'] = student
         return f(*args, **kwargs)
     return decorated
 
@@ -166,13 +174,23 @@ def close_session(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
-@must_be_teacher_or_ta
+@must_be_teacher
 def add_student_to_course(course, **kwargs):
     if 'uni' not in request.form or not request.form['uni']:
         raise ValueError('Must include UNI')
     uni = request.form['uni']
     student = students_model.Student(uni=uni)
     course.add_student(student)
+    return flask.redirect(request.referrer or url_for('home'))
+
+#  have to allow POST because forms don't support DELETE
+#  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+@app.route('/courses/<int:course_id>/students/<int:student_id>', methods=['DELETE', 'POST'])
+@must_be_teacher
+def remove_student_from_course(course, student, **kwargs):
+    if not (request.method == 'DELETE' or request.args.get('delete')):
+        abort(404)
+    course.remove_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
 
