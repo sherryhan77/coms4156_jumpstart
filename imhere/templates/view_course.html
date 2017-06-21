@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{{ course.get('name') }}</title>
+</head>
+<body>
+  {% include 'partials/messages.html' %}
+  <div style="padding: 20px; margin: 0 auto; max-width: 900px;">
+    <center><h2>I'm Here</h2></center>
+    <center><h1>{{ course.get('name') }}</title>
+    <!-- Attendance window management -->
+    {% set session = course.get_open_session() %}
+    {% if session is none: %}
+      <h3>Attendance Window is closed</h3>
+      <form method="POST" action="{{ url_for('open_session', course_id=course.get_id()) }}">
+        <input type="Submit" value="Open Attendance Window">
+      </form>
+    {% else: %}
+      <h3>Attendance Window is open</h3>
+      <p><strong>Secret:</strong> {{ session['secret'] }}</p>
+      <form method="POST" action="{{ url_for('close_session', course_id=course.get_id()) }}">
+        <input type="Submit" value="Close Attendance Window">
+      </form>
+    {% endif %}
+
+    <h3>Students</h3>
+
+    <table cellspacing="35">
+      <thead>
+        <tr>
+          <th>
+            Add Student to Class:<br>
+            <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
+                <input type="text" required name="uni" placeholder="UNI">
+                <br>
+                <input type="submit" value="Add">
+            </form>
+          </th>
+
+  </div>
+</body>
+</html>

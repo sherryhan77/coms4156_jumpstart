@@ -53,7 +53,7 @@ class Course(Model):
 
     def add_student(self, student):
         if not student.fetched:
-            raise ValueError('Student must be saved to add to course')
+            raise ValueError('Student does not exist')
 
         if not student.is_student():
             raise ValueError('Must add a registered student to course')

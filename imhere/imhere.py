@@ -3,12 +3,14 @@
 import os
 import httplib2
 
+import sys
+import traceback
 import oauth2client
 import apiclient
 import flask
 
 from uuid import uuid4
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, abort, url_for
 from models import users_model, index_model, teachers_model, students_model, \
         courses_model, model
 from google.cloud import datastore
@@ -55,10 +57,35 @@ def must_be_teacher(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         teacher = request.user_models.get('teacher', None)
-        if teacher is not None:
-            return f(*args, **kwargs)
-        return flask.redirect(flask.url_for('home'))
+        if teacher is None:
+            return flask.redirect(url_for('home'))
+
+        course_id = kwargs.get('course_id', None)
+        if course_id is not None:
+            course = courses_model.Course(id=course_id)
+            if not teacher.teaches_course(course):
+                abort(403)
+            kwargs['course'] = course
+        return f(*args, **kwargs)
     return decorated
+
+def must_be_teacher_or_ta(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        teacher = request.user_models.get('teacher', None)
+        ta = request.user_models.get('ta', None)
+        if teacher is None and ta is None:
+            return flask.redirect(url_for('home'))
+
+        course_id = kwargs.get('course_id', None)
+        if course_id is not None:
+            course = courses_model.Course(id=course_id)
+            if not teacher.teaches_course(course) and not ta.tas_course(course):
+                abort(403)
+            kwargs['course'] = course
+        return f(*args, **kwargs)
+    return decorated
+
 
 def must_be_signed_in(f):
     @wraps(f)
@@ -66,7 +93,7 @@ def must_be_signed_in(f):
         user = request.user_models.get('user', None)
         if user is not None:
             return f(*args, **kwargs)
-        return flask.redirect(flask.url_for('home'))
+        return flask.redirect(url_for('home'))
     return decorated
 
 # make sure user is authenticated w/ live session on every request
@@ -86,11 +113,31 @@ def manage_session():
             request.user_models['teacher'] = teachers_model.Teacher(id=user_id)
         if user.is_student():
             request.user_models['student'] = students_model.Student(id=user_id)
+            request.user_models['ta'] = request.user_models['student'].as_TA()
 
 @app.before_request
 def manage_messages():
     request.messages = flask.session.get('messages', list())
     flask.session['messages'] = list()
+
+@app.errorhandler(Exception)
+def handle_app_error(e):
+    print 'handlong'
+    if request.method == 'GET':
+        traceback.print_exc(file=sys.stdout)
+        raise e
+
+    flask.session['messages'].append({
+        'type': 'error',
+        'message': e.message
+    })
+
+    traceback.print_exc(file=sys.stdout)
+    return flask.redirect(request.referrer or url_for('home'))
+
+@app.errorhandler(500)
+def handle_internal_server_error(e):
+    return render_template('error.html')
 
 @app.route('/', methods=['GET'])
 @templated('home.html')
@@ -100,9 +147,48 @@ def home():
 @app.route('/login', methods=['POST'])
 def login():
     if hasattr(request, 'user'):
-        return flask.redirect(flask.url_for('main'))
+        return flask.redirect(url_for('home'))
 
-    return flask.redirect(flask.url_for('oauth2callback'))
+    return flask.redirect(url_for('oauth2callback'))
+
+
+@app.route('/courses/<int:course_id>/sessions', methods=['POST'])
+@must_be_teacher
+def open_session(course, **kwargs):
+    course.open_session()
+    return flask.redirect(request.referrer) or url_for('home')
+
+
+@app.route('/courses/<int:course_id>/sessions/current/close', methods=['POST'])
+@must_be_teacher
+def close_session(course, **kwargs):
+    course.close_session()
+    return flask.redirect(request.referrer or url_for('home'))
+
+@app.route('/courses/<int:course_id>/students', methods=['POST'])
+@must_be_teacher_or_ta
+def add_student_to_course(course, **kwargs):
+    if 'uni' not in request.form or not request.form['uni']:
+        raise ValueError('Must include UNI')
+    uni = request.form['uni']
+    student = students_model.Student(uni=uni)
+    course.add_student(student)
+    return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses', methods=['POST'])
+@must_be_teacher
+def create_course():
+    request.user_models['teacher'].add_course(request.form['name'])
+    return flask.redirect(request.referrer) or url_for('home')
+
+@app.route('/courses/<int:course_id>', methods=['GET'])
+@must_be_teacher_or_ta
+@templated('view_course.html')
+def view_course(course, **kwargs):
+    variables = common_view_variables()
+    variables['course'] = course
+    return variables
 
 @app.route('/student/', methods=['GET', 'POST'])
 def main_student():
@@ -182,7 +268,7 @@ def add_class():
             uni = uni.strip('\r')
             cm.add_student(uni)
 
-        return flask.redirect(flask.url_for('main_teacher'))
+        return flask.redirect(url_for('main_teacher'))
 
 
 @app.route('/teacher/remove_class', methods=['POST', 'GET'])
@@ -199,13 +285,13 @@ def remove_class():
     elif request.method == 'POST':
         cid = request.form['cid']
         tm.remove_course(cid)
-        return flask.redirect(flask.url_for('main_teacher'))
+        return flask.redirect(url_for('main_teacher'))
 
 
 @app.route('/teacher/view_class', methods=['POST', 'GET'])
 def view_class():
     if request.method == 'GET':
-        flask.redirect(flask.url_for('main_teacher'))
+        flask.redirect(url_for('main_teacher'))
 
     elif request.method == 'POST':
         cm = courses_model.Courses()
@@ -263,15 +349,9 @@ def register():
         teachers_model.Teacher(id=user.get_id()).register_as_teacher()
     elif register_as == 'student':
         uni = request.form['uni']
-        try:
-            students_model.Student(id=user.get_id()).register_as_student(uni=uni)
-        except Exception as e:
-            flask.session['messages'].append({
-                'type': 'error',
-                'message': e.message
-            })
+        students_model.Student(id=user.get_id()).register_as_student(uni=uni)
 
-    return flask.redirect(flask.url_for('home'))
+    return flask.redirect(url_for('home'))
 
 @app.route('/oauth/callback')
 def oauth2callback():
@@ -280,7 +360,7 @@ def oauth2callback():
         scope=[
             'https://www.googleapis.com/auth/userinfo.email',
             'https://www.googleapis.com/auth/userinfo.profile'],
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
+        redirect_uri=url_for('oauth2callback', _external=True))
     if 'code' not in flask.request.args:
         auth_uri = flow.step1_get_authorize_url()
         return flask.redirect(auth_uri)
@@ -297,10 +377,10 @@ def oauth2callback():
         flask.session['google_user'] = user
         flask.session['user_id'] = users_model.User(**user).get_or_create().get_id()
 
-        return flask.redirect(flask.url_for('home'))
+        return flask.redirect(url_for('home'))
 
 
 @app.route('/oauth/logout', methods=['POST', 'GET'])
 def logout():
     flask.session.clear()
-    return flask.redirect(flask.url_for('index'))
+    return flask.redirect(url_for('index'))

@@ -12,10 +12,7 @@ class Model(object):
         return self.get_key().id
 
     def get_key(self):
-        try:
-            return self.model.key
-        except AttributeError:
-            raise 'Tried to get key of unsaved ' + str(self.__class__)
+        return self.model.key
 
     def destroy(self):
         if not self.fetched:
