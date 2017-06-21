@@ -179,12 +179,18 @@ def close_session(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 @app.route('/courses/<int:course_id>/sessions/current/sign-in', methods=['POST'])
-def sign_in(course):
+def sign_in(course, **kwargs):
     signer = request.user_models.get('student', None) or request.user_models.get('ta', None)
-    if not course.has_student(signer) and not course.has_TA(ta):
+    if not course.has_student(signer) and not course.has_TA(signer):
         raise ValueError('User must be in course to sign in')
 
-    course.sign_student_in(signer)
+    secret = request.form.get('secret', None)
+    success = signer.sign_in(course, secret)
+    if not success:
+        flask.session['messages'].append({
+            'type': 'error',
+            'message': 'Secret was incorrect; not signed in'
+        })
     return flask.redirect(request.referrer or url_for('home'))
 
 
