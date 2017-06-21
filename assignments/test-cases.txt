@@ -256,3 +256,6 @@ Unit Design testing
     + Add a student, TA to course. Create some attendance records.
     + Delete the course.
     + Assert the course has no students, no TAs, no open session, and session count is 0.
+    + Assert student attendance records have been appropriately decremented, and student is no longer taking course.
+    + Assert TA attendance records have been appropriately decremented, and TA is no longer TA'ing course.
+    + Assert teacher no longer teaches course.
