@@ -1,5 +1,4 @@
 from models import courses_model, users_model
-import models
 from model import Model
 from datetime import datetime
 from google.cloud import datastore
@@ -49,10 +48,11 @@ class Student(users_model.User):
         return [courses_model.Course(id=take['course_id']) for take in takes]
 
     def as_TA(self):
+        from models import tas_model
         if not self.fetched:
-            return models.tas_model.TA(**self.model)
+            return tas_model.TA(**self.model)
 
-        return models.tas_model.TA(id=self.get_id())
+        return tas_model.TA(id=self.get_id())
 
 
 class Students(Model):
