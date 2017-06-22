@@ -251,6 +251,8 @@ def create_course():
 
     for uni in unis:
         uni = uni.strip('\r')
+        if not uni:
+            continue
         student = students_model.Student(uni=uni)
         if not student.fetched:
             flask.session['messages'].append({

@@ -1,6 +1,6 @@
 <div style="padding: 20px; margin: 0 auto; max-width: 900px;">
   {% include 'partials/taught_courses.html' %}
-  {% if ta.get_taed_courses()|length > 0: %}
+  {% if ta and ta.get_taed_courses()|length > 0: %}
     <hr />
     {% include 'partials/taed_courses.html' %}
   {% endif %}
