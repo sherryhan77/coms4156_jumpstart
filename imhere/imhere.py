@@ -213,14 +213,41 @@ def sign_in(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
+def bulk_add_student_to_course(unis, course):
+    """Add unis to course. Unis should already be split into a list.
+
+    Will gracefully issue warning on invalid unis and continue processing rest.
+
+    Args:
+        unis (list of strings): List of unis of students to add.
+        course (Course): Course to add students to.
+    """
+    for uni in unis:
+        uni = uni.strip('\r')
+        if not uni:
+            continue
+        student = students_model.Student(uni=uni)
+        if not student.fetched:
+            flask.session['messages'].append({
+                'type': 'warning',
+                'message': 'No student with UNI ' + uni + ' exists'
+            })
+        else:
+            course.add_student(student)
+
+
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
 @must_be_teacher
 def add_student_to_course(course, **kwargs):
-    if 'uni' not in request.form or not request.form['uni']:
+    if 'unis' in request.form:
+        unis = request.form['unis'].split('\n')
+        bulk_add_student_to_course(unis, course)
+    elif 'uni' not in request.form or not request.form['uni']:
         raise ValueError('Must include UNI')
-    uni = request.form['uni']
-    student = students_model.Student(uni=uni)
-    course.add_student(student)
+    else:
+        uni = request.form['uni']
+        student = students_model.Student(uni=uni)
+        course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
 
@@ -238,11 +265,26 @@ def remove_student_from_course(course, student, **kwargs):
 @app.route('/courses/<int:course_id>/tas', methods=['POST'])
 @must_be_teacher
 def add_ta_to_course(course, **kwargs):
-    if 'uni' not in request.form or not request.form['uni']:
+    if 'unis' in request.form:
+        unis = request.form['unis'].split('\n')
+        for uni in unis:
+            uni = uni.strip('\r')
+            if not uni:
+                continue
+            ta = tas_model.TA(uni=uni)
+            if not ta.fetched:
+                flask.session['messages'].append({
+                    'type': 'warning',
+                    'message': 'No TA with UNI ' + uni + ' exists'
+                })
+            else:
+                course.add_TA(ta)
+    elif 'uni' not in request.form or not request.form['uni']:
         raise ValueError('Must include UNI')
-    uni = request.form['uni']
-    ta = tas_model.TA(uni=uni)
-    course.add_TA(ta)
+    else:
+        uni = request.form['uni']
+        ta = tas_model.TA(uni=uni)
+        course.add_TA(ta)
     return flask.redirect(request.referrer or url_for('home'))
 
 
