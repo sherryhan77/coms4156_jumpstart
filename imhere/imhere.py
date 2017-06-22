@@ -305,18 +305,7 @@ def create_course():
     course = request.user_models['teacher'].add_course(request.form['name'])
     unis = request.form['unis'].split('\n')
 
-    for uni in unis:
-        uni = uni.strip('\r')
-        if not uni:
-            continue
-        student = students_model.Student(uni=uni)
-        if not student.fetched:
-            flask.session['messages'].append({
-                'type': 'warning',
-                'message': 'No student with UNI ' + uni + ' exists'
-            })
-        else:
-            course.add_student(student)
+    bulk_add_student_to_course(unis, course)
     return flask.redirect(request.referrer or url_for('home'))
 
 
