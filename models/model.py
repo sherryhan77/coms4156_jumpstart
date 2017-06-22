@@ -5,17 +5,14 @@ class Model(object):
     def get_client(self):
         return datastore.Client('coms4156-168718')
 
-    def get(self, key):
-        return self.model[key]
+    def get(self, key, fallback=None):
+        return self.model.get(key, fallback)
 
     def get_id(self):
         return self.get_key().id
 
     def get_key(self):
-        try:
-            return self.model.key
-        except AttributeError:
-            raise 'Tried to get key of unsaved ' + str(self.__class__)
+        return self.model.key
 
     def destroy(self):
         if not self.fetched:

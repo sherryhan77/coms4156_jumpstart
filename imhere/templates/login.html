@@ -14,13 +14,10 @@
         </center>
     </form>
 
-    {% if not_registered %}
-    <center>
-    <font color="red">*register for an account before logging in*</font>
-    </center>
-    {% endif %}
-
     <center><h4><a href="/register">Register</a></h4></center>
+    {% if user %}
+      Loggy yo
+    {% endif %}
 
 </body>
 </html>
