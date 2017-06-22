@@ -290,6 +290,8 @@ def add_ta_to_course(course, **kwargs):
 
 #  have to allow POST because forms don't support DELETE
 #  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+
+
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
 @must_be_teacher
 def remove_ta_from_course(course, ta, **kwargs):
@@ -316,7 +318,7 @@ def destroy_course(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
-@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records', methods=['GET'])
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
 @must_be_teacher
 @templated('view_records.html')
 def view_ta_records(course, ta, **kwargs):
@@ -331,7 +333,7 @@ def view_ta_records(course, ta, **kwargs):
     )
 
 
-@app.route('/courses/<int:course_id>/students/<int:student_id>/records', methods=['GET'])
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records')
 @must_be_teacher
 @templated('view_records.html')
 def view_student_records(course, student, **kwargs):
