@@ -12,7 +12,7 @@ import flask
 from uuid import uuid4
 from flask import Flask, render_template, request, abort, url_for
 from models import users_model, index_model, teachers_model, students_model, \
-        courses_model, model, tas_model
+    courses_model, model, tas_model
 from google.cloud import datastore
 from functools import wraps
 
@@ -20,6 +20,7 @@ from functools import wraps
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app.secret_key = str(uuid4())
+
 
 def merge_dicts(*dicts):
     result = {}
@@ -45,6 +46,7 @@ def templated(template=None):
         return decorated_function
     return decorator
 
+
 def must_be_teacher(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -62,6 +64,7 @@ def must_be_teacher(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def must_be_teacher_or_ta(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -72,7 +75,9 @@ def must_be_teacher_or_ta(f):
 
         course = kwargs.get('course', None)
 
-        if course and not (teacher and teacher.teaches_course(course)) and not (ta and ta.tas_course(course)):
+        if (course and
+                not (teacher and teacher.teaches_course(course)) and
+                not (ta and ta.tas_course(course))):
             abort(403)
         return f(*args, **kwargs)
     return decorated
@@ -87,6 +92,7 @@ def must_be_signed_in(f):
         return flask.redirect(url_for('home'))
     return decorated
 
+
 def common_view_variables():
     return merge_dicts(
         request.user_models,
@@ -94,6 +100,7 @@ def common_view_variables():
             'messages': request.messages
         }
     )
+
 
 @app.url_value_preprocessor
 def convert_params(endpoint, values):
@@ -117,6 +124,7 @@ def convert_params(endpoint, values):
             raise ValueError('TA does not exist')
         values['ta'] = ta
 
+
 # make sure user is authenticated w/ live session on every request
 @app.before_request
 def manage_session():
@@ -136,10 +144,12 @@ def manage_session():
             request.user_models['student'] = students_model.Student(id=user_id)
             request.user_models['ta'] = request.user_models['student'].as_TA()
 
+
 @app.before_request
 def manage_messages():
     request.messages = flask.session.get('messages', list())
     flask.session['messages'] = list()
+
 
 @app.errorhandler(Exception)
 def handle_app_error(e):
@@ -155,14 +165,17 @@ def handle_app_error(e):
     traceback.print_exc(file=sys.stdout)
     return flask.redirect(request.referrer or url_for('home'))
 
+
 @app.errorhandler(500)
 def handle_internal_server_error(e):
     return render_template('error.html')
+
 
 @app.route('/', methods=['GET'])
 @templated('home.html')
 def home():
     return common_view_variables()
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -184,6 +197,7 @@ def open_session(course, **kwargs):
 def close_session(course, **kwargs):
     course.close_session()
     return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>/sessions/current/sign-in', methods=['POST'])
 def sign_in(course, **kwargs):
@@ -234,6 +248,8 @@ def add_ta_to_course(course, **kwargs):
 
 #  have to allow POST because forms don't support DELETE
 #  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+
+
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
 @must_be_teacher
 def remove_ta_from_course(course, ta, **kwargs):
@@ -263,11 +279,13 @@ def create_course():
             course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
+
 @app.route('/courses/<int:course_id>/destroy', methods=['POST'])
 @must_be_teacher
 def destroy_course(course, **kwargs):
     course.destroy()
     return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
 @must_be_teacher
@@ -283,6 +301,7 @@ def view_ta_records(course, ta, **kwargs):
         }
     )
 
+
 @app.route('/courses/<int:course_id>/students/<int:student_id>/records')
 @must_be_teacher
 @templated('view_records.html')
@@ -297,12 +316,15 @@ def view_student_records(course, student, **kwargs):
         }
     )
 
-@app.route('/courses/<int:course_id>/students/<int:student_id>/records/<int:session_id>', methods=['POST'])
+
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records/<int:session_id>',
+           methods=['POST'])
 @must_be_teacher
 def modify_student_attendance_record(student, course, session_id, **kwargs):
     change_to = request.form['change-to'] == 'True'
     course.edit_attendance_history(student=student, session_id=session_id, attended=change_to)
     return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>/records/<int:session_id>', methods=['POST'])
 @must_be_teacher
@@ -320,6 +342,7 @@ def view_course(course, **kwargs):
     variables['course'] = course
     return variables
 
+
 @app.route('/student/', methods=['GET', 'POST'])
 def main_student():
     sm = students_model.Students(flask.session['id'])
@@ -328,10 +351,7 @@ def main_student():
     signed_in = True if sm.has_signed_in() else False
 
     if request.method == 'GET':
-        return render_template(
-                'main_student.html',
-                signed_in=signed_in,
-                **context)
+        return render_template('main_student.html', signed_in=signed_in, **context)
 
     elif request.method == 'POST':
         if 'secret_code' in request.form.keys():
@@ -343,11 +363,7 @@ def main_student():
             else:
                 valid = False
 
-            return render_template(
-                    'main_student.html',
-                    submitted=True,
-                    valid=valid,
-                    **context)
+            return render_template('main_student.html', submitted=True, valid=valid, **context)
 
 
 @app.route('/teacher/', methods=['GET', 'POST'])
@@ -459,15 +475,8 @@ def view_class():
             students_with_ar.append([student, student_uni, num_ar])
 
         context = dict(students=students_with_ar)
-        return render_template(
-                'view_class.html',
-                cid=cid,
-                secret=secret,
-                course_name=course_name,
-                num_sessions=num_sessions,
-                uni=uni,
-                res=res,
-                **context)
+        return render_template('view_class.html', cid=cid, secret=secret, course_name=course_name,
+                               num_sessions=num_sessions, uni=uni, res=res, **context)
 
 
 @app.route('/register', methods=['POST'])
@@ -482,6 +491,7 @@ def register():
         students_model.Student(id=user.get_id()).register_as_student(uni=uni)
 
     return flask.redirect(url_for('home'))
+
 
 @app.route('/oauth/callback')
 def oauth2callback():

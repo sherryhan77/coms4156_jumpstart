@@ -50,6 +50,7 @@ class Teacher(users_model.User):
         joins = query.fetch()
         return [courses_model.Course(id=join['course_id']) for join in joins]
 
+
 class Teachers(Model):
 
     def __init__(self, tid):
