@@ -11,14 +11,16 @@
           <th>View</th>
         </tr>
       </thead>
-      <tfoot>
-        <tr>
-          <td>Course Name</td>
-          <td>Attendance Window</td>
-          <td>Sign In</td>
-          <td>View</td>
-        </tr>
-      </tfoot>
+      {% if courses|length > 3: %}
+        <tfoot>
+          <tr>
+            <td>Course Name</td>
+            <td>Attendance Window</td>
+            <td>Sign In</td>
+            <td>View</td>
+          </tr>
+        </tfoot>
+      {% endif %}
 
       {% for course in courses %}
         <tr>
