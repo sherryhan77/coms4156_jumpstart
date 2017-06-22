@@ -246,7 +246,19 @@ def remove_ta_from_course(course, ta, **kwargs):
 @app.route('/courses', methods=['POST'])
 @must_be_teacher
 def create_course():
-    request.user_models['teacher'].add_course(request.form['name'])
+    course = request.user_models['teacher'].add_course(request.form['name'])
+    unis = request.form['unis'].split('\n')
+
+    for uni in unis:
+        uni = uni.strip('\r')
+        student = students_model.Student(uni=uni)
+        if not student.fetched:
+            flask.session['messages'].append({
+                'type': 'warning',
+                'message': 'No student with UNI ' + uni + ' exists'
+            })
+        else:
+            course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
 @app.route('/courses/<int:course_id>/destroy', methods=['POST'])

@@ -26,6 +26,9 @@ class Teacher(users_model.User):
             course_id=course.get_id()
         )
 
+        while not self.teaches_course(course):
+            pass
+
         return course
 
     def teaches_course(self, course):

@@ -19,10 +19,18 @@
       .message.error {
         background-color: rgba(255, 0, 0, 0.5);
       }
+
+      .message.warning {
+        background-color: rgba(255, 255, 0, 0.5);
+      }
     </style>
     {% for message in messages %}
       {% if message['type'] == 'error' %}
         <div class="message error">
+          {{ message['message'] }}
+        </div>
+      {% elif message['type'] == 'warning' %}
+        <div class="message warning">
           {{ message['message'] }}
         </div>
       {% endif %}
