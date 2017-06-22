@@ -247,7 +247,13 @@ def remove_ta_from_course(course, ta, **kwargs):
 @must_be_teacher
 def create_course():
     request.user_models['teacher'].add_course(request.form['name'])
-    return flask.redirect(request.referrer) or url_for('home')
+    return flask.redirect(request.referrer or url_for('home'))
+
+@app.route('/courses/<int:course_id>/destroy', methods=['POST'])
+@must_be_teacher
+def destroy_course(course, **kwargs):
+    course.destroy()
+    return flask.redirect(request.referrer or url_for('home'))
 
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
 @must_be_teacher
