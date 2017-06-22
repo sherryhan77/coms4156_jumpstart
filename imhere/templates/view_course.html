@@ -5,6 +5,7 @@
   <title>{{ course.get('name') }}</title>
 </head>
 <body>
+  <a href="/logout">Log out</a>
   <a href="/">Home</a>
   {% include 'partials/messages.html' %}
   <div style="padding: 20px; margin: 0 auto; max-width: 900px;">
@@ -23,6 +24,17 @@
       <form method="POST" action="{{ url_for('close_session', course_id=course.get_id()) }}">
         <input type="Submit" value="Close Attendance Window">
       </form>
+      {% if ta and ta.tas_course(course): %}
+        <p>
+          {% if course.currently_signed_in(ta): %}
+            Signed in
+          {% else: %}
+            <form action="{{ url_for('sign_in', course_id=course.get_id()) }}" method="POST">
+              <input type="submit" value="Sign in">
+            </form>
+          {% endif %}
+        </p>
+      {% endif %}
     {% endif %}
 
     <br>

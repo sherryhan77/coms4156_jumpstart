@@ -72,7 +72,7 @@ def must_be_teacher_or_ta(f):
 
         course = kwargs.get('course', None)
 
-        if course and not teacher.teaches_course(course) and not ta.tas_course(course):
+        if course and not (teacher and teacher.teaches_course(course)) and not (ta and ta.tas_course(course)):
             abort(403)
         return f(*args, **kwargs)
     return decorated
@@ -97,6 +97,8 @@ def common_view_variables():
 
 @app.url_value_preprocessor
 def convert_params(endpoint, values):
+    if not values:
+        return
     if 'course_id' in values:
         course = courses_model.Course(id=values['course_id'])
         if not course.fetched:
@@ -172,14 +174,14 @@ def login():
 
 
 @app.route('/courses/<int:course_id>/sessions', methods=['POST'])
-@must_be_teacher
+@must_be_teacher_or_ta
 def open_session(course, **kwargs):
     course.open_session()
     return flask.redirect(request.referrer) or url_for('home')
 
 
 @app.route('/courses/<int:course_id>/sessions/current/close', methods=['POST'])
-@must_be_teacher
+@must_be_teacher_or_ta
 def close_session(course, **kwargs):
     course.close_session()
     return flask.redirect(request.referrer or url_for('home'))
@@ -446,7 +448,9 @@ def oauth2callback():
         return flask.redirect(url_for('home'))
 
 
-@app.route('/oauth/logout', methods=['POST', 'GET'])
+@app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    flask.session.clear()
-    return flask.redirect(url_for('index'))
+    session = flask.session
+    for k in session.keys():
+        session.pop(k)
+    return flask.redirect(request.referrer or url_for('home'))
