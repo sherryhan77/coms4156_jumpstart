@@ -25,8 +25,11 @@
       </form>
     {% endif %}
 
+    <br>
+    <br>
+    <br>
+    <h2>Students</h2>
     {% if teacher and teacher.teaches_course(course) %}
-      <h3>Students</h3>
       Add Student to Class:<br>
       <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
           <input type="text" required name="uni" placeholder="UNI">
@@ -69,6 +72,50 @@
       </tbody>
     </table>
 
+    <br>
+    <br>
+    <br>
+    <h2>TAs</h2>
+
+    {% if teacher and teacher.teaches_course(course) %}
+      Add TA to Class:<br>
+      <form method="POST" action="{{ url_for('add_ta_to_course', course_id=course.get_id()) }}">
+          <input type="text" required name="uni" placeholder="UNI">
+          <br>
+          <input type="submit" value="Add">
+      </form>
+    {% endif %}
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Record</th>
+          {% if teacher and teacher.teaches_course(course) %}
+            <th>Remove</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set tas = course.get_TAs() %}
+        {% set session_count = course.session_count() %}
+        {% for ta in tas: %}
+          <tr>
+            <td>{{ ta.get('name', '<unnamed>') }}</td>
+            <td>{{ ta.get('email', '<no email>') }}</td>
+            <td>{{ course.get_attendance_records(ta=ta)|length }}/{{ session_count }}</td>
+            {% if teacher and teacher.teaches_course(course) %}
+              <td>
+                <form method="POST" action="{{ url_for('remove_ta_from_course', course_id=course.get_id(), ta_id=ta.get_id()) }}?delete=true">
+                  <input type="submit" value="Remove">
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </body>
 </html>

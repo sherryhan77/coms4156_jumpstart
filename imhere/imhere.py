@@ -12,7 +12,7 @@ import flask
 from uuid import uuid4
 from flask import Flask, render_template, request, abort, url_for
 from models import users_model, index_model, teachers_model, students_model, \
-        courses_model, model
+        courses_model, model, tas_model
 from google.cloud import datastore
 from functools import wraps
 
@@ -108,6 +108,12 @@ def convert_params(endpoint, values):
         if not student.fetched:
             raise ValueError('Student does not exist')
         values['student'] = student
+
+    if 'ta_id' in values:
+        ta = tas_model.TA(id=values['ta_id'])
+        if not ta.fetched:
+            raise ValueError('TA does not exist')
+        values['ta'] = ta
 
 # make sure user is authenticated w/ live session on every request
 @app.before_request
@@ -212,6 +218,27 @@ def remove_student_from_course(course, student, **kwargs):
     if not (request.method == 'DELETE' or request.args.get('delete')):
         abort(404)
     course.remove_student(student)
+    return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses/<int:course_id>/tas', methods=['POST'])
+@must_be_teacher
+def add_ta_to_course(course, **kwargs):
+    if 'uni' not in request.form or not request.form['uni']:
+        raise ValueError('Must include UNI')
+    uni = request.form['uni']
+    ta = tas_model.TA(uni=uni)
+    course.add_TA(ta)
+    return flask.redirect(request.referrer or url_for('home'))
+
+#  have to allow POST because forms don't support DELETE
+#  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
+@must_be_teacher
+def remove_ta_from_course(course, ta, **kwargs):
+    if not (request.method == 'DELETE' or request.args.get('delete')):
+        abort(404)
+    course.remove_TA(ta)
     return flask.redirect(request.referrer or url_for('home'))
 
 
