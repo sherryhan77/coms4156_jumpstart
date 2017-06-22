@@ -67,6 +67,9 @@ class Course(Model):
             student_id=student.get_id()
         )
 
+        while not self.has_student(student):
+            pass
+
         assert self.has_student(student), (
             'Adding student didn\'t work. Must be something wrong with datastore.')
 
@@ -131,6 +134,9 @@ class Course(Model):
             course_id=self.get_id(),
             ta_id=ta.get_id()
         )
+
+        while not self.has_TA(ta):
+            pass
 
         assert self.has_TA(ta), 'Adding TA didn\'t work. Must be something wrong with datastore'
 
