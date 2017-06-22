@@ -143,7 +143,6 @@ def manage_messages():
 
 @app.errorhandler(Exception)
 def handle_app_error(e):
-    print 'handlong'
     if request.method == 'GET':
         traceback.print_exc(file=sys.stdout)
         raise e
@@ -249,6 +248,49 @@ def remove_ta_from_course(course, ta, **kwargs):
 def create_course():
     request.user_models['teacher'].add_course(request.form['name'])
     return flask.redirect(request.referrer) or url_for('home')
+
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
+@must_be_teacher
+@templated('view_records.html')
+def view_ta_records(course, ta, **kwargs):
+    return merge_dicts(
+        common_view_variables(),
+        {
+            'records': course.get_attendance_details(ta),
+            'target': ta,
+            'course': course,
+            'target_type': 'ta'
+        }
+    )
+
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records')
+@must_be_teacher
+@templated('view_records.html')
+def view_student_records(course, student, **kwargs):
+    return merge_dicts(
+        common_view_variables(),
+        {
+            'records': course.get_attendance_details(student),
+            'target': student,
+            'course': course,
+            'target_type': 'student'
+        }
+    )
+
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records/<int:session_id>', methods=['POST'])
+@must_be_teacher
+def modify_student_attendance_record(student, course, session_id, **kwargs):
+    change_to = request.form['change-to'] == 'True'
+    course.edit_attendance_history(student=student, session_id=session_id, attended=change_to)
+    return flask.redirect(request.referrer or url_for('home'))
+
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records/<int:session_id>', methods=['POST'])
+@must_be_teacher
+def modify_ta_attendance_record(ta, course, session_id, **kwargs):
+    change_to = request.form['change-to'] == 'True'
+    course.edit_attendance_history(ta=ta, session_id=session_id, attended=change_to)
+    return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>', methods=['GET'])
 @must_be_teacher_or_ta

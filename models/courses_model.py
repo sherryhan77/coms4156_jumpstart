@@ -317,6 +317,8 @@ class Course(Model):
             relevant_records = [record for record in records
                                 if record['attendance_window_id'] == window.key.id]
             details.append({
+                'opened_at': window['opened_at'],
+                'closed_at': window['closed_at'],
                 'user_id': student.get_id(),
                 'session_id': window.key.id,
                 'attended': len(relevant_records) > 0
