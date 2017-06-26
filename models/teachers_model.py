@@ -26,6 +26,9 @@ class Teacher(users_model.User):
             course_id=course.get_id()
         )
 
+        while not self.teaches_course(course):
+            pass
+
         return course
 
     def remove_course(self, course):
@@ -61,6 +64,7 @@ class Teacher(users_model.User):
         query.add_filter('teacher_id', '=', self.get_id())
         joins = query.fetch()
         return [courses_model.Course(id=join['course_id']) for join in joins]
+
 
 class Teachers(Model):
 

@@ -67,6 +67,9 @@ class Course(Model):
             student_id=student.get_id()
         )
 
+        while not self.has_student(student):
+            pass
+
         assert self.has_student(student), (
             'Adding student didn\'t work. Must be something wrong with datastore.')
 
@@ -131,6 +134,9 @@ class Course(Model):
             course_id=self.get_id(),
             ta_id=ta.get_id()
         )
+
+        while not self.has_TA(ta):
+            pass
 
         assert self.has_TA(ta), 'Adding TA didn\'t work. Must be something wrong with datastore'
 
@@ -227,6 +233,9 @@ class Course(Model):
         if not student.fetched:
             raise ValueError('Student must be saved to sign in')
 
+        if not self.has_student(student) and not self.has_TA(student):
+            raise ValueError('Student must be in course to sign in')
+
         session = self.get_open_session()
 
         if session is None:
@@ -308,6 +317,8 @@ class Course(Model):
             relevant_records = [record for record in records
                                 if record['attendance_window_id'] == window.key.id]
             details.append({
+                'opened_at': window['opened_at'],
+                'closed_at': window['closed_at'],
                 'user_id': student.get_id(),
                 'session_id': window.key.id,
                 'attended': len(relevant_records) > 0

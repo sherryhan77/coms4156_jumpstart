@@ -12,7 +12,7 @@ import flask
 from uuid import uuid4
 from flask import Flask, render_template, request, abort, url_for
 from models import users_model, index_model, teachers_model, students_model, \
-        courses_model, model
+    courses_model, model, tas_model
 from google.cloud import datastore
 from functools import wraps
 
@@ -20,6 +20,7 @@ from functools import wraps
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app.secret_key = str(uuid4())
+
 
 def merge_dicts(*dicts):
     result = {}
@@ -45,13 +46,6 @@ def templated(template=None):
         return decorated_function
     return decorator
 
-def common_view_variables():
-    return merge_dicts(
-        request.user_models,
-        {
-            'messages': request.messages
-        }
-    )
 
 def must_be_teacher(f):
     @wraps(f)
@@ -60,22 +54,16 @@ def must_be_teacher(f):
         if teacher is None:
             return flask.redirect(url_for('home'))
 
-        course_id = kwargs.get('course_id', None)
-        if course_id is not None:
-            course = courses_model.Course(id=course_id)
-            if not teacher.teaches_course(course):
-                abort(403)
-            kwargs['course'] = course
+        course = kwargs.get('course', None)
+        if course and not teacher.teaches_course(course):
+            abort(403)
 
-        student_id = kwargs.get('student_id', None)
-        if student_id is not None:
-            course = courses_model.Course(id=course_id)
-            student = students_model.Student(id=student_id)
-            if not student.takes_course(course):
-                raise ValueError('Student is not in course')
-            kwargs['student'] = student
+        student = kwargs.get('student', None)
+        if student and not student.takes_course(course):
+            raise ValueError('Student is not in course')
         return f(*args, **kwargs)
     return decorated
+
 
 def must_be_teacher_or_ta(f):
     @wraps(f)
@@ -85,12 +73,12 @@ def must_be_teacher_or_ta(f):
         if teacher is None and ta is None:
             return flask.redirect(url_for('home'))
 
-        course_id = kwargs.get('course_id', None)
-        if course_id is not None:
-            course = courses_model.Course(id=course_id)
-            if not teacher.teaches_course(course) and not ta.tas_course(course):
-                abort(403)
-            kwargs['course'] = course
+        course = kwargs.get('course', None)
+
+        if (course and
+                not (teacher and teacher.teaches_course(course)) and
+                not (ta and ta.tas_course(course))):
+            abort(403)
         return f(*args, **kwargs)
     return decorated
 
@@ -103,6 +91,39 @@ def must_be_signed_in(f):
             return f(*args, **kwargs)
         return flask.redirect(url_for('home'))
     return decorated
+
+
+def common_view_variables():
+    return merge_dicts(
+        request.user_models,
+        {
+            'messages': request.messages
+        }
+    )
+
+
+@app.url_value_preprocessor
+def convert_params(endpoint, values):
+    if not values:
+        return
+    if 'course_id' in values:
+        course = courses_model.Course(id=values['course_id'])
+        if not course.fetched:
+            raise ValueError('Course does not exist')
+        values['course'] = course
+
+    if 'student_id' in values:
+        student = students_model.Student(id=values['student_id'])
+        if not student.fetched:
+            raise ValueError('Student does not exist')
+        values['student'] = student
+
+    if 'ta_id' in values:
+        ta = tas_model.TA(id=values['ta_id'])
+        if not ta.fetched:
+            raise ValueError('TA does not exist')
+        values['ta'] = ta
+
 
 # make sure user is authenticated w/ live session on every request
 @app.before_request
@@ -123,14 +144,15 @@ def manage_session():
             request.user_models['student'] = students_model.Student(id=user_id)
             request.user_models['ta'] = request.user_models['student'].as_TA()
 
+
 @app.before_request
 def manage_messages():
     request.messages = flask.session.get('messages', list())
     flask.session['messages'] = list()
 
+
 @app.errorhandler(Exception)
 def handle_app_error(e):
-    print 'handlong'
     if request.method == 'GET':
         traceback.print_exc(file=sys.stdout)
         raise e
@@ -143,14 +165,17 @@ def handle_app_error(e):
     traceback.print_exc(file=sys.stdout)
     return flask.redirect(request.referrer or url_for('home'))
 
+
 @app.errorhandler(500)
 def handle_internal_server_error(e):
     return render_template('error.html')
+
 
 @app.route('/', methods=['GET'])
 @templated('home.html')
 def home():
     return common_view_variables()
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -161,17 +186,34 @@ def login():
 
 
 @app.route('/courses/<int:course_id>/sessions', methods=['POST'])
-@must_be_teacher
+@must_be_teacher_or_ta
 def open_session(course, **kwargs):
     course.open_session()
     return flask.redirect(request.referrer) or url_for('home')
 
 
 @app.route('/courses/<int:course_id>/sessions/current/close', methods=['POST'])
-@must_be_teacher
+@must_be_teacher_or_ta
 def close_session(course, **kwargs):
     course.close_session()
     return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses/<int:course_id>/sessions/current/sign-in', methods=['POST'])
+def sign_in(course, **kwargs):
+    signer = request.user_models.get('student', None) or request.user_models.get('ta', None)
+    if not course.has_student(signer) and not course.has_TA(signer):
+        raise ValueError('User must be in course to sign in')
+
+    secret = request.form.get('secret', None)
+    success = signer.sign_in(course, secret)
+    if not success:
+        flask.session['messages'].append({
+            'type': 'error',
+            'message': 'Secret was incorrect; not signed in'
+        })
+    return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
 @must_be_teacher
@@ -194,11 +236,103 @@ def remove_student_from_course(course, student, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
+@app.route('/courses/<int:course_id>/tas', methods=['POST'])
+@must_be_teacher
+def add_ta_to_course(course, **kwargs):
+    if 'uni' not in request.form or not request.form['uni']:
+        raise ValueError('Must include UNI')
+    uni = request.form['uni']
+    ta = tas_model.TA(uni=uni)
+    course.add_TA(ta)
+    return flask.redirect(request.referrer or url_for('home'))
+
+#  have to allow POST because forms don't support DELETE
+#  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+
+
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
+@must_be_teacher
+def remove_ta_from_course(course, ta, **kwargs):
+    if not (request.method == 'DELETE' or request.args.get('delete')):
+        abort(404)
+    course.remove_TA(ta)
+    return flask.redirect(request.referrer or url_for('home'))
+
+
 @app.route('/courses', methods=['POST'])
 @must_be_teacher
 def create_course():
-    request.user_models['teacher'].add_course(request.form['name'])
-    return flask.redirect(request.referrer) or url_for('home')
+    course = request.user_models['teacher'].add_course(request.form['name'])
+    unis = request.form['unis'].split('\n')
+
+    for uni in unis:
+        uni = uni.strip('\r')
+        if not uni:
+            continue
+        student = students_model.Student(uni=uni)
+        if not student.fetched:
+            flask.session['messages'].append({
+                'type': 'warning',
+                'message': 'No student with UNI ' + uni + ' exists'
+            })
+        else:
+            course.add_student(student)
+    return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses/<int:course_id>/destroy', methods=['POST'])
+@must_be_teacher
+def destroy_course(course, **kwargs):
+    course.destroy()
+    return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
+@must_be_teacher
+@templated('view_records.html')
+def view_ta_records(course, ta, **kwargs):
+    return merge_dicts(
+        common_view_variables(),
+        {
+            'records': course.get_attendance_details(ta),
+            'target': ta,
+            'course': course,
+            'target_type': 'ta'
+        }
+    )
+
+
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records')
+@must_be_teacher
+@templated('view_records.html')
+def view_student_records(course, student, **kwargs):
+    return merge_dicts(
+        common_view_variables(),
+        {
+            'records': course.get_attendance_details(student),
+            'target': student,
+            'course': course,
+            'target_type': 'student'
+        }
+    )
+
+
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records/<int:session_id>',
+           methods=['POST'])
+@must_be_teacher
+def modify_student_attendance_record(student, course, session_id, **kwargs):
+    change_to = request.form['change-to'] == 'True'
+    course.edit_attendance_history(student=student, session_id=session_id, attended=change_to)
+    return flask.redirect(request.referrer or url_for('home'))
+
+
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records/<int:session_id>', methods=['POST'])
+@must_be_teacher
+def modify_ta_attendance_record(ta, course, session_id, **kwargs):
+    change_to = request.form['change-to'] == 'True'
+    course.edit_attendance_history(ta=ta, session_id=session_id, attended=change_to)
+    return flask.redirect(request.referrer or url_for('home'))
+
 
 @app.route('/courses/<int:course_id>', methods=['GET'])
 @must_be_teacher_or_ta
@@ -208,6 +342,7 @@ def view_course(course, **kwargs):
     variables['course'] = course
     return variables
 
+
 @app.route('/student/', methods=['GET', 'POST'])
 def main_student():
     sm = students_model.Students(flask.session['id'])
@@ -216,10 +351,7 @@ def main_student():
     signed_in = True if sm.has_signed_in() else False
 
     if request.method == 'GET':
-        return render_template(
-                'main_student.html',
-                signed_in=signed_in,
-                **context)
+        return render_template('main_student.html', signed_in=signed_in, **context)
 
     elif request.method == 'POST':
         if 'secret_code' in request.form.keys():
@@ -231,11 +363,7 @@ def main_student():
             else:
                 valid = False
 
-            return render_template(
-                    'main_student.html',
-                    submitted=True,
-                    valid=valid,
-                    **context)
+            return render_template('main_student.html', submitted=True, valid=valid, **context)
 
 
 @app.route('/teacher/', methods=['GET', 'POST'])
@@ -347,15 +475,8 @@ def view_class():
             students_with_ar.append([student, student_uni, num_ar])
 
         context = dict(students=students_with_ar)
-        return render_template(
-                'view_class.html',
-                cid=cid,
-                secret=secret,
-                course_name=course_name,
-                num_sessions=num_sessions,
-                uni=uni,
-                res=res,
-                **context)
+        return render_template('view_class.html', cid=cid, secret=secret, course_name=course_name,
+                               num_sessions=num_sessions, uni=uni, res=res, **context)
 
 
 @app.route('/register', methods=['POST'])
@@ -370,6 +491,7 @@ def register():
         students_model.Student(id=user.get_id()).register_as_student(uni=uni)
 
     return flask.redirect(url_for('home'))
+
 
 @app.route('/oauth/callback')
 def oauth2callback():
@@ -398,7 +520,9 @@ def oauth2callback():
         return flask.redirect(url_for('home'))
 
 
-@app.route('/oauth/logout', methods=['POST', 'GET'])
+@app.route('/logout', methods=['POST', 'GET'])
 def logout():
-    flask.session.clear()
-    return flask.redirect(url_for('index'))
+    session = flask.session
+    for k in session.keys():
+        session.pop(k)
+    return flask.redirect(request.referrer or url_for('home'))
