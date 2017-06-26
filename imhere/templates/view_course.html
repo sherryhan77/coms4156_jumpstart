@@ -81,7 +81,9 @@
                   </form>
                 </td>
                 <td>
-                  <a href="{{ url_for('view_student_records', course_id=course.get_id(), student_id=student.get_id()) }}">View</a>
+                  <form action="{{ url_for('view_student_records', course_id=course.get_id(), student_id=student.get_id()) }}" method="GET">
+                    <input type="submit" value="View">
+                  </form>
                 </td>
               {% endif %}
             </tr>
@@ -135,7 +137,9 @@
                   </form>
                 </td>
                 <td>
-                  <a href="{{ url_for('view_ta_records', course_id=course.get_id(), ta_id=ta.get_id()) }}">View</a>
+                  <form action="{{ url_for('view_ta_records', course_id=course.get_id(), ta_id=ta.get_id()) }}" method="GET">
+                    <input type="submit" value="View">
+                  </form>
                 </td>
               {% endif %}
             </tr>
