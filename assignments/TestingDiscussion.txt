@@ -1,0 +1,19 @@
+Testing Discussion
+
+We used pytest for most of our unit tests, with the following invocation on our test_design.py test suite:
+python -m pytest test_design.py
+This was executed from the root directory of the repo.
+
+A timestamped log of the results is available in placeholder_here/assignments/unittest_log.txt, currently available at https://github.com/TheFiggisAgency/placeholder_here/blob/test-rewrite-routes/assignments/unittest_log.txt. This file and branch will likely not survive final resolution of all open bugs, so we will include it as an attachment with the submission for this assignment.
+
+Bugs that we were able to resolve immediately upon identification did not have a github.com Issue created around them. We had two bugs that did rise to the Issue level:
+
+https://github.com/TheFiggisAgency/placeholder_here/issues/5
+"Course not allowing TA to sign in"
+This one has since been resolved, the correction merged into the master branch, and the Issue closed.
+It was in fact a bug in the test, and not the system.
+
+https://github.com/TheFiggisAgency/placeholder_here/issues/6
+"test_design.test_attendance_manipulation fails, and inconsistently"
+This bug remains open at this time. The failing unit test is attempting to assess long-term DB consistency after many attendance record edits. Due to the intrique nature of the test, we have not yet ruled out that the issue is with the test or with the system in truth.
+
