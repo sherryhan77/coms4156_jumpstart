@@ -497,7 +497,7 @@ def test_course_creation_deletion():
         assert course.session_count == 0, 'New course has non-zero session count.'
 
         course.add_student(student)
-        course.add_TA(student)
+        course.add_TA(ta)
         add_attendance_records(course, [student, ta], 2)
 
         teacher.remove_course(course)
