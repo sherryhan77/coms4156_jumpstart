@@ -323,6 +323,7 @@ class Course(Model):
                 'session_id': window.key.id,
                 'attended': len(relevant_records) > 0
             })
+        details.sort(key=lambda record: [record['opened_at'], record['closed_at']])
 
         return details
 
