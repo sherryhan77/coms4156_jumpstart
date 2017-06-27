@@ -16,4 +16,7 @@ It was in fact a bug in the test, and not the system.
 https://github.com/TheFiggisAgency/placeholder_here/issues/6
 "test_design.test_attendance_manipulation fails, and inconsistently"
 This bug remains open at this time. The failing unit test is attempting to assess long-term DB consistency after many attendance record edits. Due to the intricate nature of the test, we have not yet ruled out that the issue is with the test or with the system in truth.
+Very recent explorations have found the datastore throwing strange runtime errors relating to its network connection failing. This was seen when using the local datastore, so the meaning of its connection to a native application running at 127.0.0.1 is puzzling.
 
+
+Testing was consistent run locally or with the gcloud datastore.
