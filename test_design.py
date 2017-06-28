@@ -401,11 +401,15 @@ def test_attendance_manipulation():
             state['sessions'].append(course.get_open_session().key.id)
             state['attendances'][state['user'].get_id()].append(False)
             test()
+            details = course.get_attendance_details(state['user'])
+            assert details[-1]['closed_at'] is None, 'Just opened session is closed.'
 
         def close():
             course.close_session()
             state['secret'] = None
             test()
+            details = course.get_attendance_details(state['user'])
+            assert details[-1]['closed_at'] is not None, 'Just closed session is open.'
 
         def login():
             if state['secret'] is None:
