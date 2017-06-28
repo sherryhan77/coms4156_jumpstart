@@ -11,9 +11,7 @@ import flask
 
 from uuid import uuid4
 from flask import Flask, render_template, request, abort, url_for
-from models import users_model, index_model, teachers_model, students_model, \
-    courses_model, model, tas_model
-from google.cloud import datastore
+from models import users_model, teachers_model, students_model, courses_model, tas_model
 from functools import wraps
 
 
@@ -225,6 +223,7 @@ def add_student_to_course(course, **kwargs):
     course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
+
 #  have to allow POST because forms don't support DELETE
 #  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
 @app.route('/courses/<int:course_id>/students/<int:student_id>', methods=['DELETE', 'POST'])
@@ -246,10 +245,9 @@ def add_ta_to_course(course, **kwargs):
     course.add_TA(ta)
     return flask.redirect(request.referrer or url_for('home'))
 
+
 #  have to allow POST because forms don't support DELETE
 #  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
-
-
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
 @must_be_teacher
 def remove_ta_from_course(course, ta, **kwargs):

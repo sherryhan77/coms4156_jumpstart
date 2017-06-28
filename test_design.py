@@ -1,8 +1,6 @@
-from models import users_model, index_model, teachers_model, students_model, \
-    courses_model, model, tas_model
+from models import teachers_model, students_model, courses_model, tas_model
 
 import pytest
-import imhere
 
 teacher_user_data = {
     'family_name': 'Teacher',
@@ -393,8 +391,10 @@ def test_attendance_manipulation():
                 d = details[i]
                 e = expected[i]
                 assert d['user_id'] == e['user_id'], 'Attendance details gave back wrong user id'
-                assert d['session_id'] == e['session_id'], 'Attendance details gave back wrong session id'
-                assert d['attended'] == e['attended'], 'Attendance details gave back wrong attended flag'
+                assert d['session_id'] == e['session_id'], (
+                    'Attendance details gave back wrong session id')
+                assert d['attended'] == e['attended'], (
+                    'Attendance details gave back wrong attended flag')
 
         def open():
             state['secret'] = course.open_session()

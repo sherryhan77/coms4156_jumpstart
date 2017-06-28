@@ -1,7 +1,4 @@
 from models import courses_model, users_model
-from model import Model
-from datetime import datetime
-from google.cloud import datastore
 
 
 class DuplicateUNIException(Exception):

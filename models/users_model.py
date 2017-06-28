@@ -1,5 +1,4 @@
 from model import Model
-from google.cloud import datastore
 
 
 class User(Model):

@@ -1,5 +1,3 @@
-from model import Model
-from google.cloud import datastore
 from models import courses_model, users_model
 
 
