@@ -77,6 +77,7 @@ class Course(Model):
             raise ValueError('Student must be saved to remove from course')
 
         if not self.has_student(student):
+            print 'skippideedooda'
             return
 
         query = self.datastore.query(kind='takes')

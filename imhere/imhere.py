@@ -305,9 +305,6 @@ def remove_ta_from_course(course, ta, **kwargs):
 @must_be_teacher
 def create_course():
     course = request.user_models['teacher'].add_course(request.form['name'])
-    unis = request.form['unis'].split('\n')
-
-    bulk_add_student_to_course(unis, course)
     return flask.redirect(request.referrer or url_for('home'))
 
 

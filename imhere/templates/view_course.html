@@ -3,6 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <title>{{ course.get('name') }}</title>
+  <style>
+    #bulk-student-adder {
+      display: none;
+    }
+
+    #bulk-student-adder.open {
+      display: block;
+    }
+
+    #bulk-ta-adder {
+      display: none;
+    }
+
+    #bulk-ta-adder.open {
+      display: block;
+    }
+
+  </style>
+  <script>
+    // students
+    window.onload = () => {
+      // set up bulk student stuff
+      (() => {
+        const openBulkButton = document.querySelector('#open-bulk-student')
+        const bulkArea = document.querySelector('#bulk-student-adder')
+        let open = false
+        openBulkButton.addEventListener('click', e => {
+          e.preventDefault()
+          if (open) {
+            bulkArea.classList.remove('open')
+            open = false
+          } else {
+            bulkArea.classList.add('open')
+            open = true
+          }
+        })
+
+        const bulkFileInput = document.querySelector('#student-file')
+        const bulkTextInput = document.querySelector('#student-unis')
+        bulkFileInput.addEventListener('change', () => {
+          if (bulkFileInput.files.length === 0) {
+            return
+          }
+          const fr = new FileReader()
+          try {
+            fr.onload = e => {
+              bulkTextInput.value += e.target.result
+              bulkFileInput.value = ''
+            }
+
+            fr.readAsText(bulkFileInput.files[0])
+          } catch (e) {
+            alert('Some kind of error occurred. Check the console for more information.')
+            console.error(e)
+          }
+        })
+      })()
+
+      // set up bulk TA stuff
+      ;(() => {
+        const openBulkButton = document.querySelector('#open-bulk-ta')
+        const bulkArea = document.querySelector('#bulk-ta-adder')
+        let open = false
+        openBulkButton.addEventListener('click', e => {
+          e.preventDefault()
+          if (open) {
+            bulkArea.classList.remove('open')
+            open = false
+          } else {
+            bulkArea.classList.add('open')
+            open = true
+          }
+        })
+
+        const bulkFileInput = document.querySelector('#ta-file')
+        const bulkTextInput = document.querySelector('#ta-unis')
+        bulkFileInput.addEventListener('change', () => {
+          if (bulkFileInput.files.length === 0) {
+            return
+          }
+          const fr = new FileReader()
+          try {
+            fr.onload = e => {
+              bulkTextInput.value += e.target.result
+              bulkFileInput.value = ''
+            }
+
+            fr.readAsText(bulkFileInput.files[0])
+          } catch (e) {
+            alert('Some kind of error occurred. Check the console for more information.')
+            console.error(e)
+          }
+        })
+      })()
+    }
+  </script>
 </head>
 <body>
   <a href="/logout">Log out</a>
@@ -44,9 +140,19 @@
     {% if teacher and teacher.teaches_course(course) %}
       Add Student to Class:<br>
       <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
-          <input type="text" required name="uni" placeholder="UNI">
-          <br>
-          <input type="submit" value="Add">
+        <input type="text" name="uni" placeholder="UNI">
+        <br>
+
+        <button id="open-bulk-student">Bulk Add -&gt;</button>
+        <div id="bulk-student-adder">
+          <form method="POST" action="{{ url_for('add_student_to_course', course_id=course.get_id()) }}">
+            <textarea id="student-unis" name="unis"></textarea>
+            <label for="student-file">
+              <span style="border: 1px solid grey; border-radius: 2px; cursor: pointer; padding: 5px;">Import file</span>
+              <input type="file" id="student-file" style="display: none">
+            </label>
+        </div>
+        <input type="submit" value="Add">
       </form>
     {% endif %}
 
@@ -100,9 +206,19 @@
     {% if teacher and teacher.teaches_course(course) %}
       Add TA to Class:<br>
       <form method="POST" action="{{ url_for('add_ta_to_course', course_id=course.get_id()) }}">
-          <input type="text" required name="uni" placeholder="UNI">
-          <br>
-          <input type="submit" value="Add">
+        <input type="text" name="uni" placeholder="UNI">
+        <br>
+        <button id="open-bulk-ta">Bulk Add -&gt;</button>
+        <div id="bulk-ta-adder">
+          <form method="POST" action="{{ url_for('add_ta_to_course', course_id=course.get_id()) }}">
+            <textarea id="ta-unis" name="unis"></textarea>
+            <label for="ta-file">
+              <span style="border: 1px solid grey; border-radius: 2px; cursor: pointer; padding: 5px;">Import file</span>
+              <input type="file" id="ta-file" style="display: none">
+            </label>
+        </div>
+
+        <input type="submit" value="Add">
       </form>
     {% endif %}
 
