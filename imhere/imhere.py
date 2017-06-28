@@ -213,14 +213,41 @@ def sign_in(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
+def bulk_add_student_to_course(unis, course):
+    """Add unis to course. Unis should already be split into a list.
+
+    Will gracefully issue warning on invalid unis and continue processing rest.
+
+    Args:
+        unis (list of strings): List of unis of students to add.
+        course (Course): Course to add students to.
+    """
+    for uni in unis:
+        uni = uni.strip('\r')
+        if not uni:
+            continue
+        student = students_model.Student(uni=uni)
+        if not student.fetched:
+            flask.session['messages'].append({
+                'type': 'warning',
+                'message': 'No student with UNI ' + uni + ' exists'
+            })
+        else:
+            course.add_student(student)
+
+
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
 @must_be_teacher
 def add_student_to_course(course, **kwargs):
-    if 'uni' not in request.form or not request.form['uni']:
+    if 'unis' in request.form and request.form['unis'] != '':
+        unis = request.form['unis'].split('\n')
+        bulk_add_student_to_course(unis, course)
+    elif 'uni' not in request.form or not request.form['uni']:
         raise ValueError('Must include UNI')
-    uni = request.form['uni']
-    student = students_model.Student(uni=uni)
-    course.add_student(student)
+    else:
+        uni = request.form['uni']
+        student = students_model.Student(uni=uni)
+        course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
 
@@ -238,16 +265,33 @@ def remove_student_from_course(course, student, **kwargs):
 @app.route('/courses/<int:course_id>/tas', methods=['POST'])
 @must_be_teacher
 def add_ta_to_course(course, **kwargs):
-    if 'uni' not in request.form or not request.form['uni']:
+    if 'unis' in request.form and request.form['unis'] != '':
+        unis = request.form['unis'].split('\n')
+        for uni in unis:
+            uni = uni.strip('\r')
+            if not uni:
+                continue
+            ta = tas_model.TA(uni=uni)
+            if not ta.fetched:
+                flask.session['messages'].append({
+                    'type': 'warning',
+                    'message': 'No TA with UNI ' + uni + ' exists'
+                })
+            else:
+                course.add_TA(ta)
+    elif 'uni' not in request.form or not request.form['uni']:
         raise ValueError('Must include UNI')
-    uni = request.form['uni']
-    ta = tas_model.TA(uni=uni)
-    course.add_TA(ta)
+    else:
+        uni = request.form['uni']
+        ta = tas_model.TA(uni=uni)
+        course.add_TA(ta)
     return flask.redirect(request.referrer or url_for('home'))
 
 
 #  have to allow POST because forms don't support DELETE
 #  fortunately, POST /path/to/:id doesn't mean anything in REST (afaik)
+
+
 @app.route('/courses/<int:course_id>/tas/<int:ta_id>', methods=['DELETE', 'POST'])
 @must_be_teacher
 def remove_ta_from_course(course, ta, **kwargs):
@@ -261,20 +305,6 @@ def remove_ta_from_course(course, ta, **kwargs):
 @must_be_teacher
 def create_course():
     course = request.user_models['teacher'].add_course(request.form['name'])
-    unis = request.form['unis'].split('\n')
-
-    for uni in unis:
-        uni = uni.strip('\r')
-        if not uni:
-            continue
-        student = students_model.Student(uni=uni)
-        if not student.fetched:
-            flask.session['messages'].append({
-                'type': 'warning',
-                'message': 'No student with UNI ' + uni + ' exists'
-            })
-        else:
-            course.add_student(student)
     return flask.redirect(request.referrer or url_for('home'))
 
 
@@ -285,7 +315,7 @@ def destroy_course(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
-@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records', methods=['GET'])
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
 @must_be_teacher
 @templated('view_records.html')
 def view_ta_records(course, ta, **kwargs):
@@ -300,7 +330,7 @@ def view_ta_records(course, ta, **kwargs):
     )
 
 
-@app.route('/courses/<int:course_id>/students/<int:student_id>/records', methods=['GET'])
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records')
 @must_be_teacher
 @templated('view_records.html')
 def view_student_records(course, student, **kwargs):
