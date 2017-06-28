@@ -389,8 +389,12 @@ def test_attendance_manipulation():
                     'course.current_signed_in(student) is True despite no open window')
 
             details = course.get_attendance_details(state['user'])
-            assert details == expected, 'Attendance details incorrect for iteration {}'.format(
-                len(state['sessions']) + 1)
+            for i in range(len(state['sessions'])):
+                d = details[i]
+                e = expected[i]
+                assert d['user_id'] == e['user_id'], 'Attendance details gave back wrong user id'
+                assert d['session_id'] == e['session_id'], 'Attendance details gave back wrong session id'
+                assert d['attended'] == e['attended'], 'Attendance details gave back wrong attended flag'
 
         def open():
             state['secret'] = course.open_session()
