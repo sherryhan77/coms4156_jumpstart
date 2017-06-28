@@ -381,8 +381,9 @@ def test_attendance_manipulation():
             ]
 
             if len(attendances) > 0:
-                assert course.currently_signed_in(state['user']) == (attendances[-1] and
-                    state['secret'] is not None), 'course.currently_signed_in(student) incorrect'
+                assert course.currently_signed_in(state['user']) == (
+                    attendances[-1] and state['secret'] is not None), (
+                    'course.currently_signed_in(student) incorrect')
             else:
                 assert not course.currently_signed_in(state['user']), (
                     'course.current_signed_in(student) is True despite no open window')
@@ -468,7 +469,7 @@ def test_attendance_manipulation():
 def test_student_registration():
     students_model.Student(uni='one').destroy()
     students_model.Student(uni='two').destroy()
-    student = students_model.Student(**student_user_data).get_or_create().register_as_student(
+    students_model.Student(**student_user_data).get_or_create().register_as_student(
         uni='one')
 
     ta = students_model.Student(**ta_user_data).get_or_create()
@@ -489,12 +490,15 @@ def test_course_creation_deletion():
         course = context['course']
         teacher = context['teacher']
         student = context['student']
+        student_records = course.get_attendance_records(student=student)
         ta = context['ta']
+        ta_records = course.get_attendance_records(student=ta)
 
         assert not course.get_students(), 'New course has students.'
         assert not course.get_TAs(), 'New course has TAs.'
         assert course.get_open_session() is None, 'New course has open session.'
-        assert course.session_count == 0, 'New course has non-zero session count.'
+        assert course.session_count() == 0, (
+            'New course reporting {} session count.'.format(course.session_count()))
 
         course.add_student(student)
         course.add_TA(ta)
@@ -505,4 +509,17 @@ def test_course_creation_deletion():
         assert not course.get_students(), 'Deleted course has students.'
         assert not course.get_TAs(), 'Deleted course has TAs.'
         assert course.get_open_session() is None, 'Deleted course has open session.'
-        assert course.session_count, 'Deleted course has a session count.'
+        assert not course.session_count(), (
+            'Deleted course has {} session count.'.format(course.session_count()))
+
+        assert len(student_records) == len(course.get_attendance_records(student=student)), (
+            'Student attendance records: before = {0}, after = {1} course deletion.'.format(
+                len(student_records), len(course.get_attendance_records(student=student))))
+        assert not student.takes_course(course), 'Student still takes course.'
+
+        assert len(ta_records) == len(course.get_attendance_records(student=ta)), (
+            'TA attendance records: before = {0}, after = {1} course deletion.'.format(
+                len(ta_records), len(course.get_attendance_records(student=ta))))
+        assert not ta.tas_course(course), 'TA still TA\'s course.'
+
+        assert not teacher.teaches_course(course), 'Teacher still teaches course.'

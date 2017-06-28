@@ -31,6 +31,21 @@ class Teacher(users_model.User):
 
         return course
 
+    def remove_course(self, course):
+        if not self.fetched:
+            raise ValueError('Unsaved teacher cannot remove a course')
+
+        if not self.is_teacher():
+            raise ValueError('Must be a registered teacher to remove a course')
+
+        if not course.fetched:
+            raise ValueError('Course must be saved to be removed.')
+
+        if not self.teaches_course(course):
+            return
+
+        course.destroy()
+
     def teaches_course(self, course):
         if not self.fetched or not course.fetched:
             return False
