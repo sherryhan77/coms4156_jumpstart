@@ -239,7 +239,7 @@ def bulk_add_student_to_course(unis, course):
 @app.route('/courses/<int:course_id>/students', methods=['POST'])
 @must_be_teacher
 def add_student_to_course(course, **kwargs):
-    if 'unis' in request.form:
+    if 'unis' in request.form and request.form['unis'] != '':
         unis = request.form['unis'].split('\n')
         bulk_add_student_to_course(unis, course)
     elif 'uni' not in request.form or not request.form['uni']:
@@ -265,7 +265,7 @@ def remove_student_from_course(course, student, **kwargs):
 @app.route('/courses/<int:course_id>/tas', methods=['POST'])
 @must_be_teacher
 def add_ta_to_course(course, **kwargs):
-    if 'unis' in request.form:
+    if 'unis' in request.form and request.form['unis'] != '':
         unis = request.form['unis'].split('\n')
         for uni in unis:
             uni = uni.strip('\r')
