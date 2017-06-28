@@ -287,7 +287,7 @@ def destroy_course(course, **kwargs):
     return flask.redirect(request.referrer or url_for('home'))
 
 
-@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records')
+@app.route('/courses/<int:course_id>/tas/<int:ta_id>/records', methods=['GET'])
 @must_be_teacher
 @templated('view_records.html')
 def view_ta_records(course, ta, **kwargs):
@@ -302,7 +302,7 @@ def view_ta_records(course, ta, **kwargs):
     )
 
 
-@app.route('/courses/<int:course_id>/students/<int:student_id>/records')
+@app.route('/courses/<int:course_id>/students/<int:student_id>/records', methods=['GET'])
 @must_be_teacher
 @templated('view_records.html')
 def view_student_records(course, student, **kwargs):
