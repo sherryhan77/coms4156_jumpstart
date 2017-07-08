@@ -32,4 +32,4 @@ DATA_BACKEND = 'datastore'
 
 # Google Cloud Project ID. This can be found on the 'Overview' page at
 # https://console.developers.google.com
-PROJECT_ID = 'imhere-ase-summer-2017'
+PROJECT_ID = 'coms4156-168718'
