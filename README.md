@@ -13,3 +13,5 @@ ImHere is an attendance-taking app using Flask and Python 2.7.  The Wiki guides 
 
 ### Have fun! and Don't Break the Build!
 
+ColdCode 
+Qimeng Han
